@@ -1,0 +1,141 @@
+<!-- review.wxml —— 复习模式：三态揭示（看图/释义提示 → 完整答案），对照 H5 PracticeReview.vue -->
+<view class="page" style="--mode: var(--mode-review)">
+
+  <!-- 顶部：模式标识 + 进度 -->
+  <view class="row row--between rv-topbar">
+    <view class="pill pill--active">🔁 复习</view>
+    <text class="rv-round" wx:if="{{total > 0 && !showOverlay}}">第 {{index + 1}} 张 / 共 {{total}} 张</text>
+  </view>
+
+  <!-- 加载态 -->
+  <view wx:if="{{loading}}" class="word-card rv-card">
+    <view class="placeholder-img" style="--mode: var(--mode-review)">⏳</view>
+    <text class="muted rv-tip-text">加载中…</text>
+  </view>
+
+  <!-- 主卡：三态内容（蒙层显示时隐藏底层卡） -->
+  <view wx:elif="{{word && !showOverlay}}" class="word-card rv-card">
+
+    <!-- ===== 视觉区：配图 / 占位 ===== -->
+    <!-- initial 态且无真实配图：不展示视觉块，直接给中文释义（对照 H5 无图分支） -->
+    <block wx:if="{{state !== 'initial' || word.hasImage}}">
+      <image
+        wx:if="{{word.hasImage && !imgError}}"
+        class="placeholder-img"
+        style="--mode: var(--mode-review)"
+        src="{{word.pictureUrl}}"
+        mode="aspectFill"
+        binderror="onImgError"
+      />
+      <view wx:else class="placeholder-img" style="--mode: var(--mode-review)">{{word.emoji}}</view>
+    </block>
+
+    <!-- ===== initial：看图回忆 / 无图直接给释义 ===== -->
+    <view wx:if="{{state === 'initial'}}" class="rv-stage">
+      <block wx:if="{{word.hasImage}}">
+        <text class="rv-ask">这是什么意思？</text>
+        <text class="muted rv-tip-text">看图回忆，想一想再看答案</text>
+      </block>
+      <!-- 无图：initial 直接展示中文释义（H5 无图时 initial 即显示 translation） -->
+      <view wx:else class="rv-section">
+        <text class="rv-section__label">中文释义</text>
+        <text
+          wx:for="{{word.meaningLines}}"
+          wx:key="index"
+          class="word-card__meaning"
+        >{{item}}</text>
+      </view>
+    </view>
+
+    <!-- ===== hint：配图 + 中文释义 ===== -->
+    <view wx:elif="{{state === 'hint'}}" class="rv-stage">
+      <view class="rv-section">
+        <text class="rv-section__label">中文释义</text>
+        <text
+          wx:for="{{word.meaningLines}}"
+          wx:key="index"
+          class="word-card__meaning"
+        >{{item}}</text>
+      </view>
+      <text class="muted rv-tip-text">想起来了吗？点"查看答案"揭晓</text>
+    </view>
+
+    <!-- ===== full：完整答案（单词 + 音标 + 释义 + 例句） ===== -->
+    <view wx:else class="rv-stage">
+      <text class="word-card__word">{{word.word}}</text>
+
+      <view class="rv-phonetic-row" wx:if="{{word.phonetic}}">
+        <text class="word-card__phonetic">{{word.phonetic}}</text>
+        <view class="btn-sound rv-sound" bindtap="onPlaySound">🔊 发音</view>
+      </view>
+
+      <view class="rv-section">
+        <text class="rv-section__label">中文释义</text>
+        <view wx:if="{{word.pos}}" class="pill rv-pos">{{word.pos}}</view>
+        <text
+          wx:for="{{word.meaningLines}}"
+          wx:key="index"
+          class="word-card__meaning"
+        >{{item}}</text>
+      </view>
+
+      <!-- 例句轮播 -->
+      <view wx:if="{{word.examples.length > 0}}" class="rv-ex">
+        <view class="row row--between rv-ex__head">
+          <text class="rv-ex__title">例句</text>
+          <text class="rv-ex__count">{{exIndex + 1}} / {{word.examples.length}}</text>
+        </view>
+        <swiper
+          class="rv-swiper"
+          current="{{exIndex}}"
+          bindchange="onExChange"
+          circular="{{true}}"
+          next-margin="24rpx"
+        >
+          <swiper-item wx:for="{{word.examples}}" wx:key="index">
+            <view class="rv-ex__item">
+              <text class="rv-ex__en">{{item.en}}</text>
+              <text wx:if="{{item.zh}}" class="rv-ex__zh">{{item.zh}}</text>
+            </view>
+          </swiper-item>
+        </swiper>
+        <view class="row row--center gap-12 rv-dots">
+          <view
+            wx:for="{{word.examples}}"
+            wx:key="index"
+            class="rv-dot {{index === exIndex ? 'rv-dot--active' : ''}}"
+          ></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ===== 操作按钮区 ===== -->
+  <block wx:if="{{word && !showOverlay && !loading}}">
+    <!-- initial：有图给「中文提示」，统一给「查看答案」 -->
+    <view wx:if="{{state === 'initial'}}" class="rv-actions">
+      <button wx:if="{{word.hasImage}}" class="btn-ghost" bindtap="onShowHint">💡 中文提示</button>
+      <button class="btn-primary" bindtap="onShowAnswer">👀 查看答案</button>
+    </view>
+    <!-- hint：仅「查看答案」 -->
+    <view wx:elif="{{state === 'hint'}}" class="rv-actions">
+      <button class="btn-primary" bindtap="onShowAnswer">👀 查看答案</button>
+    </view>
+    <!-- full：判定按钮 -->
+    <view wx:else class="rv-actions">
+      <button class="btn-primary" bindtap="onMastered" disabled="{{submitting}}">✅ 已掌握</button>
+      <button class="btn-ghost rv-unknown" bindtap="onUnknown" disabled="{{submitting}}">🤔 不记得</button>
+    </view>
+  </block>
+
+  <!-- 完成 / 空态蒙层 -->
+  <completion-overlay
+    visible="{{showOverlay}}"
+    mode="review"
+    count="{{finishedCount}}"
+    empty-text="当前已没有需要复习的单词，去别的模式看看吧"
+    bind:restart="onRestart"
+    bind:home="onHome"
+  />
+
+</view>

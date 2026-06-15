@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "tag-filter-bar": "/components/tag-filter-bar/index"
+  },
+  "navigationBarTitleText": "练习"
+}

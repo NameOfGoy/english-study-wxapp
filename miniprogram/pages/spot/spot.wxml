@@ -1,0 +1,92 @@
+<!-- 抽查 spot —— 随机检测：图 → 提示 → 对答案，底部 通过 / 没记住 -->
+<view class="page" style="--mode: var(--mode-spot)">
+
+  <!-- 顶部进度：本次抽查 current/total -->
+  <view wx:if="{{total > 0}}" class="spot-head">
+    <view class="row row--between">
+      <view class="row gap-12">
+        <text class="spot-head__emoji">🎯</text>
+        <text class="spot-head__title">本次抽查</text>
+      </view>
+      <text class="spot-head__count">
+        <text class="spot-head__cur">{{current}}</text>/{{total}}
+      </text>
+    </view>
+    <view class="spot-bar">
+      <view class="spot-bar__fill" style="width: {{percent}}%"></view>
+    </view>
+  </view>
+
+  <!-- 加载态 -->
+  <view wx:if="{{loading}}" class="word-card spot-card">
+    <view class="placeholder-img" style="--mode: var(--mode-spot)">⏳</view>
+    <text class="spot-tip">正在加载抽查内容…</text>
+  </view>
+
+  <!-- 抽查卡片 -->
+  <view wx:elif="{{word}}" class="word-card spot-card">
+    <!-- 配图：有真实图片则用 <image>，加载失败回退 emoji 占位 -->
+    <image
+      wx:if="{{word.pictureUrl && !word.picError}}"
+      class="placeholder-img"
+      style="--mode: var(--mode-spot)"
+      src="{{word.pictureUrl}}"
+      mode="aspectFill"
+      binderror="onPicError"
+    ></image>
+    <view wx:else class="placeholder-img" style="--mode: var(--mode-spot)">{{word.emoji}}</view>
+
+    <!-- 阶段一：仅图，提示回忆 -->
+    <view wx:if="{{phase === 0}}" class="col row--center spot-stage">
+      <text class="spot-tip">看图回忆这个单词的意思</text>
+    </view>
+
+    <!-- 阶段二：揭晓单词 + 音标 + 发音（先回忆释义，再对答案） -->
+    <block wx:if="{{phase >= 1}}">
+      <text class="word-card__word">{{word.word}}</text>
+      <text class="word-card__phonetic">
+        <block wx:if="{{word.phoneticUS}}">美 {{word.phoneticUS}}</block>
+        <block wx:if="{{word.phoneticUS && word.phoneticUK}}"> · </block>
+        <block wx:if="{{word.phoneticUK}}">英 {{word.phoneticUK}}</block>
+      </text>
+      <view class="btn-sound" bindtap="onPlay">🔊 发音</view>
+    </block>
+
+    <!-- 阶段三：对答案，展示完整释义 + 例句 -->
+    <block wx:if="{{phase >= 2}}">
+      <view class="spot-divider"></view>
+      <text wx:if="{{word.pos}}" class="spot-pos">{{word.pos}}</text>
+      <text class="word-card__meaning">{{word.meaning}}</text>
+      <view wx:if="{{word.examples.length > 0}}" class="spot-examples">
+        <view wx:for="{{word.examples}}" wx:key="index" class="spot-example">
+          <text class="spot-example__en">{{item.en}}</text>
+          <text wx:if="{{item.zh}}" class="spot-example__zh">{{item.zh}}</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 底部操作区（仅有当前卡时显示） -->
+  <view wx:if="{{word && !loading}}" class="spot-actions">
+    <!-- 阶段一：可看图提示（有图时）/ 看单词 -->
+    <button wx:if="{{phase === 0}}" class="btn-primary" bindtap="reveal">想好了，看单词</button>
+    <!-- 阶段二：对答案 -->
+    <button wx:elif="{{phase === 1}}" class="btn-primary" bindtap="reveal">对答案</button>
+    <!-- 阶段三：通过 / 没记住 -->
+    <view wx:else class="row gap-16">
+      <button class="btn-ghost flex-1" bindtap="fail" disabled="{{submitting}}">没记住</button>
+      <button class="btn-primary flex-1" bindtap="pass" disabled="{{submitting}}">通过</button>
+    </view>
+  </view>
+
+  <!-- 完成 / 空态全屏蒙层 -->
+  <completion-overlay
+    visible="{{showOverlay}}"
+    mode="spot"
+    count="{{finishedCount}}"
+    empty-text="当前已没有需要抽查的单词"
+    bind:restart="onRestart"
+    bind:home="onHome"
+  />
+
+</view>

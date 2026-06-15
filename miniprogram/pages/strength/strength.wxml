@@ -1,0 +1,87 @@
+<!-- 加强模式：choice(只给释义二选一) → full(揭示全部) → 下一个；对照 H5 PracticeStrength.vue -->
+<view class="page strength" style="--mode: {{modeColorVar}}">
+
+  <!-- 顶部：本批进度（已练 index / 本批总数） -->
+  <view class="str-head" wx:if="{{total > 0}}">
+    <view class="row row--between">
+      <view class="row gap-12">
+        <text class="str-head__emoji">💪</text>
+        <text class="str-head__title">加强 · 第 {{index + 1}} / {{total}} 个</text>
+      </view>
+      <text class="str-head__hint">坚持练完，攻克易忘词</text>
+    </view>
+    <view class="str-bar">
+      <view class="str-bar__fill" style="width: {{percent}}%"></view>
+    </view>
+  </view>
+
+  <!-- 主卡：配图 + 两态内容 -->
+  <view class="word-card str-card" wx:if="{{current}}">
+    <!-- 配图：有图且未加载失败用真实图片，否则回退 emoji 占位 -->
+    <image
+      wx:if="{{current.pictureUrl && !imgError}}"
+      class="placeholder-img"
+      style="--mode: {{modeColorVar}}"
+      src="{{current.pictureUrl}}"
+      mode="aspectFill"
+      binderror="onImgError"
+    ></image>
+    <view wx:else class="placeholder-img" style="--mode: {{modeColorVar}}">{{current.emoji}}</view>
+
+    <!-- choice 态：只给中文释义，先回忆对应的词 -->
+    <block wx:if="{{phase === 'choice'}}">
+      <view class="str-ask">还记得这个意思对应的词吗？</view>
+      <text class="str-meaning">{{current.meaning}}</text>
+      <view class="str-pos" wx:if="{{current.pos}}">{{current.pos}}</view>
+      <view class="str-cheer">
+        <text class="str-cheer__emoji">🔥</text>
+        <text>想一想，再选「记得 / 不记得」</text>
+      </view>
+    </block>
+
+    <!-- full 态：揭示 词 + 音标 + 释义 + 例句 -->
+    <block wx:else>
+      <text class="word-card__word">{{current.word}}</text>
+
+      <view class="str-phonetic-row" wx:if="{{current.phoneticUS || current.phoneticUK}}">
+        <text class="word-card__phonetic" wx:if="{{current.phoneticUS}}">美 {{current.phoneticUS}}</text>
+        <view class="btn-sound" wx:if="{{current.phoneticUS}}" bindtap="onPlay" data-type="us">🔊</view>
+        <text class="word-card__phonetic" wx:if="{{current.phoneticUK}}">英 {{current.phoneticUK}}</text>
+        <view class="btn-sound" wx:if="{{current.phoneticUK}}" bindtap="onPlay" data-type="uk">🔊</view>
+      </view>
+
+      <view class="str-divider"></view>
+      <text class="str-pos" wx:if="{{current.pos}}">{{current.pos}}</text>
+      <text class="word-card__meaning">{{current.meaning}}</text>
+
+      <view class="str-examples" wx:if="{{current.examples.length > 0}}">
+        <view wx:for="{{current.examples}}" wx:key="index" class="str-example">
+          <text class="str-example__en">{{item.en}}</text>
+          <text class="str-example__zh" wx:if="{{item.zh}}">{{item.zh}}</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 底部操作区 -->
+  <view class="str-actions" wx:if="{{current}}">
+    <!-- choice 态：二选一 -->
+    <block wx:if="{{phase === 'choice'}}">
+      <button class="btn-primary" bindtap="onRemember" disabled="{{submitting}}">记得 ✅</button>
+      <button class="btn-ghost" bindtap="onForget" disabled="{{submitting}}">不记得</button>
+    </block>
+    <!-- full 态：单个「下一个」 -->
+    <button wx:else class="btn-primary" bindtap="onNext">下一个 →</button>
+  </view>
+
+  <!-- 完成 / 空态全屏蒙层 -->
+  <completion-overlay
+    visible="{{showOverlay}}"
+    mode="strength"
+    count="{{finishedCount}}"
+    empty-text="当前已没有需要加强的词，去学习/复习积累更多吧"
+    bind:restart="onRestart"
+    bind:home="onHome"
+  />
+
+</view>

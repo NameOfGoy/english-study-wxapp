@@ -1,0 +1,129 @@
+<!-- pages/profile/profile.wxml —— 我的(tab页) 数据来自真实 service -->
+<view class="page page--tab">
+
+  <!-- 顶部个人卡：主色渐变背景 + 头像(真实/emoji回退，可点换头像) + 昵称 + 统计 -->
+  <view class="profile-hero">
+    <view class="row gap-24">
+      <!-- 头像容器：点击换头像；右下角相机角标提示可改 -->
+      <view class="profile-hero__avatar-wrap" bindtap="onTapAvatar">
+        <!-- 有头像URL且未加载失败 → <image>；否则 emoji 占位 -->
+        <image
+          wx:if="{{profile.avatarUrl && !profile.avatarError}}"
+          class="profile-hero__avatar profile-hero__avatar-img"
+          src="{{profile.avatarUrl}}"
+          mode="aspectFill"
+          binderror="onAvatarError"
+        />
+        <view wx:else class="profile-hero__avatar">{{profile.avatarEmoji}}</view>
+        <view class="profile-hero__camera">📷</view>
+      </view>
+
+      <view class="col flex-1">
+        <text class="profile-hero__name">{{profile.nickname}} 👤</text>
+        <text class="profile-hero__sub">坚持每天，词汇量稳步上涨 🔥</text>
+      </view>
+    </view>
+
+    <view class="row profile-hero__stats">
+      <block wx:for="{{profile.stats}}" wx:key="label">
+        <view class="stat">
+          <text class="stat__num profile-hero__num">{{item.value}}</text>
+          <text class="stat__label profile-hero__label">{{item.label}}</text>
+        </view>
+        <view wx:if="{{index < profile.stats.length - 1}}" class="profile-hero__divider"></view>
+      </block>
+    </view>
+  </view>
+
+  <!-- 设置项分组 -->
+  <view class="section-title">⚙️ 设置</view>
+  <view class="card">
+    <view
+      class="list-item"
+      wx:for="{{profile.settings}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onTapSetting"
+    >
+      <view class="list-item__icon">{{item.emoji}}</view>
+      <text class="flex-1">{{item.text}}</text>
+      <text class="list-item__arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="card">
+    <view class="list-item profile-logout" bindtap="onLogout">
+      <view class="list-item__icon">🚪</view>
+      <text class="flex-1">退出登录</text>
+      <text class="list-item__arrow">›</text>
+    </view>
+  </view>
+
+  <view class="profile-version text-3">单词记忆助手 · v1.0.0</view>
+
+  <!-- 个人资料编辑层：fixed 蒙层 + 底部白卡（复用 .card / .btn-primary 规格） -->
+  <view
+    wx:if="{{editVisible}}"
+    class="edit-mask"
+    bindtap="closeEdit"
+    catchtouchmove="noop"
+  >
+    <!-- 卡片内点击不冒泡到蒙层（避免点输入区误关） -->
+    <view class="edit-sheet" catchtap="noop">
+      <view class="edit-sheet__header">
+        <text class="edit-sheet__cancel" bindtap="closeEdit">取消</text>
+        <text class="edit-sheet__title">个人资料</text>
+        <text class="edit-sheet__save {{editSaving ? 'is-disabled' : ''}}" bindtap="saveEdit">保存</text>
+      </view>
+
+      <view class="edit-sheet__body">
+        <!-- 昵称 -->
+        <view class="edit-field">
+          <text class="edit-field__label">昵称</text>
+          <input
+            class="edit-field__input"
+            placeholder="请输入昵称"
+            placeholder-class="edit-field__ph"
+            value="{{editForm.name}}"
+            data-field="name"
+            maxlength="20"
+            bindinput="onEditInput"
+          />
+        </view>
+        <!-- 账号（只读展示，本期不在此修改） -->
+        <view class="edit-field">
+          <text class="edit-field__label">账号</text>
+          <text class="edit-field__readonly">{{editForm.account || '未设置'}}</text>
+        </view>
+        <!-- 手机号 -->
+        <view class="edit-field">
+          <text class="edit-field__label">手机号</text>
+          <input
+            class="edit-field__input"
+            type="number"
+            placeholder="请输入手机号"
+            placeholder-class="edit-field__ph"
+            value="{{editForm.phone}}"
+            data-field="phone"
+            maxlength="11"
+            bindinput="onEditInput"
+          />
+        </view>
+        <!-- 邮箱 -->
+        <view class="edit-field edit-field--last">
+          <text class="edit-field__label">邮箱</text>
+          <input
+            class="edit-field__input"
+            placeholder="请输入邮箱"
+            placeholder-class="edit-field__ph"
+            value="{{editForm.email}}"
+            data-field="email"
+            bindinput="onEditInput"
+          />
+        </view>
+      </view>
+    </view>
+  </view>
+
+</view>

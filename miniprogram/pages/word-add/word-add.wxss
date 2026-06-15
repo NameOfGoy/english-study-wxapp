@@ -1,0 +1,193 @@
+/* pages/word-add/word-add.wxss —— 仅页面特有样式；配色一律走 app.wxss 的 var(--x) */
+
+.wa {
+  /* 普通页（非 tab），底部给提交按钮留呼吸 */
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+
+/* ============ 顶部 单词 / 短语 切换 ============ */
+.wa-tabs {
+  display: flex;
+  gap: 16rpx;
+  padding: 8rpx;
+  background: var(--card);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow);
+  margin-bottom: 24rpx;
+}
+.wa-tab {
+  flex: 1;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  font-size: 28rpx;
+  color: var(--text-2);
+}
+.wa-tab--active {
+  background: var(--primary-grad);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6rpx 16rpx rgba(61, 165, 244, 0.28);
+}
+
+/* ============ 表单卡 ============ */
+.wa-card {
+  padding: 8rpx 32rpx;
+}
+
+/* 字段行（标签 + 输入），默认横排 */
+.wa-field {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 28rpx 0;
+  border-bottom: 2rpx solid var(--line);
+}
+.wa-field--last {
+  border-bottom: none;
+}
+/* 纵排字段（多行 textarea 用） */
+.wa-field--col {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16rpx;
+}
+.wa-field__label {
+  width: 150rpx;
+  flex-shrink: 0;
+  font-size: 28rpx;
+  color: var(--text-2);
+}
+.wa-req {
+  color: var(--danger);
+}
+.wa-field__input {
+  flex: 1;
+  font-size: 30rpx;
+  color: var(--text);
+}
+.wa-field__textarea {
+  width: 100%;
+  min-height: 88rpx;
+  font-size: 30rpx;
+  color: var(--text);
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+.wa-ph {
+  color: var(--text-3);
+}
+
+/* ============ 词性块 ============ */
+.wa-pos {
+  padding: 28rpx 32rpx;
+}
+.wa-pos + .wa-pos {
+  margin-top: 20rpx;
+}
+.wa-pos__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+.wa-pos__title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.wa-pos__remove {
+  font-size: 24rpx;
+  color: var(--danger);
+  padding: 8rpx 20rpx;
+  border-radius: var(--r-pill);
+  background: rgba(255, 90, 95, 0.1);
+}
+.wa-pos__remove:active {
+  background: rgba(255, 90, 95, 0.2);
+}
+
+/* 词性选择 chip 网格 */
+.wa-pos__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+.wa-chip {
+  height: 56rpx;
+  padding: 0 24rpx;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--r-pill);
+  background: #f2f4f7;
+  color: var(--text-2);
+  font-size: 24rpx;
+  line-height: 1;
+}
+.wa-chip--active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6rpx 16rpx rgba(61, 165, 244, 0.28);
+}
+
+/* 词性释义输入 */
+.wa-pos__translation {
+  width: 100%;
+  min-height: 96rpx;
+  padding: 20rpx 24rpx;
+  box-sizing: border-box;
+  background: var(--bg);
+  border-radius: var(--r-inner);
+  font-size: 30rpx;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* 新增词性块按钮（虚线描边） */
+.wa-add-pos {
+  margin-top: 20rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx dashed var(--primary);
+  border-radius: var(--r-inner);
+  color: var(--primary);
+  font-size: 28rpx;
+  font-weight: 600;
+  background: rgba(61, 165, 244, 0.06);
+}
+.wa-add-pos:active {
+  background: rgba(61, 165, 244, 0.12);
+}
+
+/* ============ 自动生成图片开关行 ============ */
+.wa-gen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+.wa-gen__title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.wa-gen__sub {
+  font-size: 22rpx;
+  color: var(--text-2);
+  margin-top: 6rpx;
+}
+
+/* ============ 提交按钮 ============ */
+.wa-submit {
+  margin-top: 40rpx;
+}
+.wa-submit--disabled {
+  opacity: 0.5;
+}

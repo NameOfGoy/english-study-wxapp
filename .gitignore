@@ -1,0 +1,10 @@
+# 依赖（可由 npm 重新安装）
+node_modules/
+miniprogram_npm/
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

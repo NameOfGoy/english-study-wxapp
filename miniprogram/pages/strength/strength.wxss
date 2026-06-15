@@ -1,0 +1,136 @@
+/* strength.wxss —— 仅页面特有微调，颜色一律用全局变量（加强主题色 --mode-strength） */
+
+.strength {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============ 顶部进度 ============ */
+.str-head {
+  margin-bottom: 24rpx;
+}
+.str-head__emoji {
+  font-size: 32rpx;
+}
+.str-head__title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.str-head__hint {
+  font-size: 24rpx;
+  color: var(--text-2);
+}
+.str-bar {
+  margin-top: 16rpx;
+  width: 100%;
+  height: 14rpx;
+  border-radius: var(--r-pill);
+  background: rgba(22, 192, 203, 0.14);
+  overflow: hidden;
+}
+.str-bar__fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--mode, var(--mode-strength));
+  transition: width 0.3s ease;
+}
+
+/* ============ 主卡 ============ */
+.str-card {
+  padding-top: 36rpx;
+}
+
+/* choice 态：提问 + 释义大字 */
+.str-ask {
+  font-size: 28rpx;
+  color: var(--text-2);
+  margin-top: 28rpx;
+}
+.str-meaning {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: var(--text);
+  text-align: center;
+  margin-top: 16rpx;
+  line-height: 1.3;
+}
+.str-pos {
+  font-size: 24rpx;
+  color: var(--mode, var(--mode-strength));
+  font-weight: 600;
+  margin-top: 12rpx;
+}
+
+/* 鼓励语条 */
+.str-cheer {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 32rpx;
+  padding: 16rpx 28rpx;
+  border-radius: var(--r-pill);
+  background: rgba(22, 192, 203, 0.1);
+  color: var(--mode, var(--mode-strength));
+  font-size: 26rpx;
+  font-weight: 600;
+}
+.str-cheer__emoji {
+  font-size: 30rpx;
+}
+
+/* full 态：音标行 */
+.str-phonetic-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+.str-phonetic-row .btn-sound {
+  height: 56rpx;
+  padding: 0 20rpx;
+}
+
+/* full 态：分割线 */
+.str-divider {
+  width: 100%;
+  height: 2rpx;
+  background: var(--line);
+  margin: 28rpx 0 20rpx;
+}
+
+/* full 态：例句区 */
+.str-examples {
+  width: 100%;
+  margin-top: 24rpx;
+}
+.str-example {
+  padding: 20rpx 0;
+}
+.str-example + .str-example {
+  border-top: 2rpx solid var(--line);
+}
+.str-example__en {
+  display: block;
+  font-size: 28rpx;
+  color: var(--text);
+  line-height: 1.5;
+}
+.str-example__zh {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-2);
+  margin-top: 8rpx;
+  line-height: 1.4;
+}
+
+/* ============ 底部按钮组 ============ */
+.str-actions {
+  margin-top: auto;
+  padding-top: 40rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}

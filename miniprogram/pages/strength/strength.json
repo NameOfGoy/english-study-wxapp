@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "completion-overlay": "/components/completion-overlay/index"
+  },
+  "navigationBarTitleText": "加强"
+}

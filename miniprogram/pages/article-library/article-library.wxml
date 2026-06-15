@@ -1,0 +1,73 @@
+<!-- pages/article-library/article-library.wxml —— 收录文章库（普通页）
+     复刻 H5 ArticleLibrary.vue：搜索 + 可折叠标签筛选 + 分页列表。 -->
+<view class="page al">
+
+  <!-- 搜索 + 标签筛选 -->
+  <view class="al-filters">
+    <view class="al-search">
+      <text class="al-search__icon">🔍</text>
+      <input
+        class="al-search__input"
+        placeholder="搜索标题或包含的单词"
+        placeholder-class="al-ph"
+        value="{{keyword}}"
+        bindinput="onKeywordInput"
+      />
+    </view>
+
+    <view class="al-tagfilter">
+      <view class="al-tf__header" bindtap="onToggleTagPanel">
+        <text class="al-tf__title">🏷️ 标签筛选 <text class="al-tf__summary">{{tagSummary}}</text></text>
+        <text class="al-tf__arrow">{{tagExpanded ? '▲' : '▼'}}</text>
+      </view>
+      <view wx:if="{{tagExpanded}}" class="al-tf__body">
+        <view wx:if="{{tagsLoading}}" class="al-tf__loading">加载中…</view>
+        <view wx:elif="{{tagOptions.length === 0}}" class="al-tf__empty">还没有标签，去词典创建一个吧</view>
+        <view wx:else class="al-tf__grid">
+          <view
+            wx:for="{{tagOptions}}"
+            wx:key="id"
+            class="al-tagchip {{item.selected ? 'al-tagchip--on' : ''}}"
+            style="{{item.selected ? item.style : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onToggleTag"
+          >{{item.name}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 列表 -->
+  <view class="al-list">
+    <view
+      wx:for="{{list}}"
+      wx:key="id"
+      class="al-row"
+      data-id="{{item.id}}"
+      bindtap="openDetail"
+    >
+      <view class="al-row__title">
+        {{item.titleMain}}<text wx:if="{{item.titleSub}}" class="al-row__title-zh">（{{item.titleSub}}）</text>
+      </view>
+      <view wx:if="{{item.hasTags}}" class="al-row__tags">
+        <text
+          wx:for="{{item.tags}}"
+          wx:for-item="t"
+          wx:key="tag_id"
+          class="al-tag"
+          style="background: {{t.style || '#1989fa'}}"
+        >{{t.name}}</text>
+      </view>
+      <view wx:if="{{item.hasWords}}" class="al-row__words">{{item.wordsText}}</view>
+    </view>
+
+    <!-- 加载/到底/空态 -->
+    <view wx:if="{{loading}}" class="al-foot">加载中…</view>
+    <view wx:elif="{{empty}}" class="al-empty">
+      <view class="al-empty__emoji">📚</view>
+      <text class="al-empty__text">{{emptyText}}</text>
+    </view>
+    <view wx:elif="{{finished}}" class="al-foot">没有更多了</view>
+  </view>
+
+</view>

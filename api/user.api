@@ -1,0 +1,77 @@
+syntax = "v1"
+
+@server (
+	group:  user
+	prefix: api/v1/user
+)
+service englishstudy-api {
+	@doc "用户模块/用户登录/微信登录"
+	@handler LoginWx
+	post /login/wx (UserLoginWxReq) returns (UserLoginWxResp)
+
+	@doc "用户模块/微信注册用户"
+	@handler RegisterWx
+	post /register/wx (UserRegisterWxReq) returns (UserRegisterWxResp)
+}
+
+type (
+	UserLoginWxReq {
+		Code string `json:"code"` // 微信登录code
+	}
+	UserLoginWxResp {
+		CommonReply
+		Token    string   `json:"token"` // 访问令牌
+		OpenId string `json:"open_id"` // 微信openid, 当错误码为9时返回
+		UserInfo UserInfo `json:"data"` // 用户信息
+	}
+	UserRegisterWxReq {
+		OpenId string `json:"open_id"` // 微信openid
+		Name string `json:"name"` // 用户名
+		Avatar string `json:"avatar"` // 头像
+	}
+	UserRegisterWxResp {
+		CommonReply
+		Token string `json:"token"` // 访问令牌
+		UserInfo UserInfo `json:"data"` // 用户信息
+	}
+)
+
+@server (
+	group:  user
+	jwt:    Auth
+	prefix: api/v1/user
+)
+service englishstudy-api {
+	@doc "用户模块/获取用户信息"
+	@handler GetUserInfo
+	get /:id (GetUserInfoReq) returns (GetUserInfoResp)
+
+	@doc "用户模块/更新用户信息"
+	@handler UpdateUserInfo
+	put /:id (UpdateUserInfoReq) returns (UpdateUserInfoResp)
+}
+
+type (
+	GetUserInfoReq {
+		PathIDReq
+	}
+	GetUserInfoResp {
+		CommonReply
+		UserInfo UserInfo `json:"data"` // 用户信息
+	}
+	UpdateUserInfoReq {
+		PathIDReq
+		UserInfo UserInfo `json:"data"` // 用户信息
+	}
+	UpdateUserInfoResp {
+		CommonReply
+	}
+	UserInfo {
+		ID       uint    `json:"id"`
+		Name     string  `json:"name"`
+		Account  string  `json:"account"`
+		Phone    string  `json:"phone"`
+		Email    string  `json:"email"`
+		Avatar   string  `json:"avatar"` // 头像
+	}
+)

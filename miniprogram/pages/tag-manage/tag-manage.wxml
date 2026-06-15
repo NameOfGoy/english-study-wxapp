@@ -1,0 +1,131 @@
+<!-- pages/tag-manage/tag-manage.wxml —— 标签管理（从「我的」进入的普通页）
+     复刻 H5 TagManage.vue：系统标签 / 我的标签两段，底部弹层新建/编辑，wx.showModal 删除确认。
+     无 vant，弹层与色板均自绘；蓝色活力风复用 app.wxss 全局类。 -->
+<view class="page tm">
+
+  <!-- 加载态 -->
+  <view wx:if="{{loading}}" class="tm-loading">加载中…</view>
+
+  <block wx:else>
+
+    <!-- 系统标签：仅当存在系统标签时整段渲染 -->
+    <block wx:if="{{systemTags.length > 0}}">
+      <view class="section-title">
+        🔒 系统标签
+        <text class="tm-count">{{systemTags.length}} 个</text>
+      </view>
+      <view class="card tm-list">
+        <view class="tm-row" wx:for="{{systemTags}}" wx:key="id">
+          <view class="tm-pill" style="background: {{item.style || '#969799'}}">{{item.name}}</view>
+          <!-- 系统标签的编辑/删除入口仅超管可见 -->
+          <view wx:if="{{admin}}" class="tm-actions">
+            <view class="tm-action" data-id="{{item.id}}" bindtap="onEdit">✏️</view>
+            <view class="tm-action tm-action--danger" data-id="{{item.id}}" bindtap="onDelete">🗑️</view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 我的标签 -->
+    <view class="section-title">
+      🏷️ 我的标签
+      <text class="tm-count">{{userTags.length}} 个</text>
+    </view>
+
+    <!-- 我的标签空态 -->
+    <view wx:if="{{userTags.length === 0}}" class="card tm-empty">
+      <view class="tm-empty__emoji">🏷️</view>
+      <text class="tm-empty__text">还没有自定义标签</text>
+      <button class="btn-primary tm-empty__btn" hover-class="none" bindtap="onCreate">立即新建</button>
+    </view>
+
+    <!-- 我的标签列表 -->
+    <view wx:else class="card tm-list">
+      <view class="tm-row" wx:for="{{userTags}}" wx:key="id">
+        <view class="tm-pill" style="background: {{item.style || '#1989fa'}}">{{item.name}}</view>
+        <view class="tm-actions">
+          <view class="tm-action" data-id="{{item.id}}" bindtap="onEdit">✏️</view>
+          <view class="tm-action tm-action--danger" data-id="{{item.id}}" bindtap="onDelete">🗑️</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部新建按钮（始终可见，方便快速新建） -->
+    <button class="btn-primary tm-add-btn" hover-class="none" bindtap="onCreate">＋ 新建标签</button>
+
+  </block>
+
+  <!-- ============ 新建 / 编辑弹层（底部抽屉） ============ -->
+  <view wx:if="{{formVisible}}" class="tm-mask" catchtap="onCloseForm">
+    <!-- 阻止冒泡，点击面板内部不关闭 -->
+    <view class="tm-sheet" catchtap="noop">
+
+      <view class="tm-sheet__header">
+        <text class="tm-sheet__title">{{editingId ? '编辑标签' : '新建标签'}}</text>
+        <view class="tm-sheet__close" bindtap="onCloseForm">✕</view>
+      </view>
+
+      <view class="tm-sheet__body">
+        <!-- 名称输入 -->
+        <view class="tm-field">
+          <text class="tm-field__label">名称</text>
+          <input
+            class="tm-field__input"
+            placeholder="不超过 20 字"
+            placeholder-class="tm-ph"
+            maxlength="20"
+            value="{{formName}}"
+            bindinput="onNameInput"
+          />
+        </view>
+
+        <!-- 系统标签开关：仅超管新建时显示（编辑时归属锁定，不可改） -->
+        <view wx:if="{{admin && !editingId}}" class="tm-system-row">
+          <view class="col">
+            <text class="tm-system-row__title">设为系统标签</text>
+            <text class="tm-system-row__sub">对所有用户可见，仅超管可建</text>
+          </view>
+          <switch
+            checked="{{formIsSystem}}"
+            color="#3DA5F4"
+            bindchange="onSystemToggle"
+          />
+        </view>
+
+        <!-- 调色板（多色选一） -->
+        <view class="tm-color">
+          <text class="tm-color__label">颜色</text>
+          <view class="tm-color__grid">
+            <view
+              wx:for="{{palette}}"
+              wx:key="*this"
+              class="tm-dot {{formStyle === item ? 'tm-dot--active' : ''}}"
+              style="background: {{item}}"
+              data-color="{{item}}"
+              bindtap="onPickColor"
+            ></view>
+          </view>
+        </view>
+
+        <!-- 预览 -->
+        <view class="tm-preview">
+          <text class="tm-preview__label">预览</text>
+          <view class="tm-pill" style="background: {{formStyle}}">{{formName || '标签名'}}</view>
+        </view>
+      </view>
+
+      <view class="tm-sheet__actions">
+        <button class="btn-ghost" hover-class="none" bindtap="onCloseForm">取消</button>
+        <button
+          class="btn-primary {{!formNameTrimmed ? 'tm-btn--disabled' : ''}}"
+          hover-class="none"
+          loading="{{submitting}}"
+          disabled="{{!formNameTrimmed || submitting}}"
+          bindtap="onSubmit"
+        >{{editingId ? '保存' : '创建'}}</button>
+      </view>
+
+    </view>
+  </view>
+
+</view>

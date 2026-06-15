@@ -1,0 +1,198 @@
+/* pages/search-add/search-add.wxss —— 仅页面特有样式；配色一律走 app.wxss 的 var(--x) */
+
+.sa {
+  /* 普通页（非 tab） */
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+/* 底部固定栏出现时，给列表底部让位（栏高约 130rpx + 安全区） */
+.sa--padded {
+  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
+}
+
+/* ============ 吸顶搜索区 ============ */
+.sa-search {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  /* 吃掉 page 的顶部/左右 padding 做全宽底，吸顶时盖住下方滚动内容 */
+  margin: -24rpx -32rpx 0;
+  padding: 24rpx 32rpx 16rpx;
+}
+.sa-search__icon {
+  font-size: 30rpx;
+}
+.sa-search__clear {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #ebeef3;
+  color: var(--text-3);
+  font-size: 24rpx;
+  flex-shrink: 0;
+}
+.sa-search__clear:active {
+  background: #dde3ea;
+}
+.sa-ph {
+  color: var(--text-3);
+}
+
+/* ============ 状态区（未输入 / 搜索中 / 无结果） ============ */
+.sa-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  padding: 120rpx 40rpx;
+}
+.sa-state__emoji {
+  font-size: 96rpx;
+}
+.sa-state__text {
+  font-size: 28rpx;
+  color: var(--text-2);
+}
+.sa-state__sub {
+  font-size: 24rpx;
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* ============ 工具条：计数 + 全选 ============ */
+.sa-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 8rpx;
+}
+.sa-toolbar__count {
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+.sa-toolbar__all {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 26rpx;
+  color: var(--text-2);
+  /* 扩大点按区域 */
+  padding: 8rpx 0 8rpx 24rpx;
+}
+
+/* ============ 自绘方形复选框 ============ */
+.sa-check {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 10rpx;
+  border: 3rpx solid #c9d2dd;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 26rpx;
+  line-height: 1;
+  flex-shrink: 0;
+  background: var(--card);
+}
+.sa-check--on {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+/* 已添加项的占位框：隐藏但保持缩进对齐 */
+.sa-check--ghost {
+  visibility: hidden;
+}
+
+/* ============ 结果列表 ============ */
+.sa-list {
+  padding: 8rpx 28rpx;
+}
+.sa-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  padding: 24rpx 0;
+}
+.sa-item + .sa-item {
+  border-top: 2rpx solid var(--line);
+}
+.sa-item .sa-check {
+  margin-top: 6rpx;
+}
+/* 已添加：整行置灰（对照 H5 .is-added） */
+.sa-item--added {
+  opacity: 0.55;
+}
+
+.sa-item__info {
+  flex: 1;
+  min-width: 0;
+}
+.sa-item__top {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+.sa-item__sw {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* 类型 / 已添加 小标签 */
+.sa-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 36rpx;
+  padding: 0 14rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  line-height: 1;
+}
+.sa-tag--phrase {
+  color: var(--primary);
+  background: rgba(61, 165, 244, 0.1);
+  border: 2rpx solid rgba(61, 165, 244, 0.4);
+}
+.sa-tag--added {
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.sa-item__phonetic {
+  display: block;
+  font-size: 22rpx;
+  color: var(--text-3);
+  margin-top: 6rpx;
+}
+.sa-item__trans {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 26rpx;
+  color: var(--text-2);
+  line-height: 1.5;
+  margin-top: 8rpx;
+}
+
+/* ============ 底部固定操作栏 ============ */
+.sa-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: var(--card);
+  box-shadow: 0 -8rpx 24rpx rgba(20, 30, 50, 0.08);
+}
+.sa-submit--disabled {
+  opacity: 0.5;
+}

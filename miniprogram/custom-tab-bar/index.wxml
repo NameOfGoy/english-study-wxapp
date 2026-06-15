@@ -1,0 +1,12 @@
+<view class="tab-bar">
+  <view
+    wx:for="{{list}}"
+    wx:key="index"
+    class="tab-item {{selected === index ? 'tab-item--active' : ''}}"
+    data-index="{{index}}"
+    bindtap="switchTab"
+  >
+    <view class="tab-item__emoji">{{item.emoji}}</view>
+    <view class="tab-item__text">{{item.text}}</view>
+  </view>
+</view>

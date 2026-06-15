@@ -1,0 +1,52 @@
+<!-- components/tag-filter-bar/index.wxml —— 折叠式标签筛选条 -->
+<view class="tfb">
+
+  <!-- 折叠头：左侧标题 + summary，右侧展开/收起箭头 -->
+  <view class="tfb__header" bindtap="onToggleExpand" hover-class="none">
+    <view class="tfb__summary">
+      <text class="tfb__icon">🏷️</text>
+      <text class="tfb__title">标签筛选</text>
+      <text class="tfb__summary-text">{{ summaryText }}</text>
+    </view>
+    <text class="tfb__caret">{{ expanded ? '▲' : '▼' }}</text>
+  </view>
+
+  <!-- 展开体 -->
+  <view wx:if="{{ expanded }}" class="tfb__body">
+
+    <!-- 加载态 -->
+    <view wx:if="{{ loading }}" class="tfb__loading">加载中…</view>
+
+    <block wx:else>
+      <!-- 「全部 (不筛选)」单独一行，与具体标签互斥 -->
+      <view
+        class="tfb__all {{ isAllSelected ? 'tfb__all--active' : '' }}"
+        bindtap="onSelectAll"
+        hover-class="none"
+      >
+        <text class="tfb__all-mark">{{ isAllSelected ? '✓' : '○' }}</text>
+        <text>全部 (不筛选)</text>
+      </view>
+
+      <!-- chip 网格多选 -->
+      <view wx:if="{{ tags.length > 0 }}" class="tfb__grid">
+        <view
+          wx:for="{{ tags }}"
+          wx:key="id"
+          class="tfb__chip {{ item.selected ? 'tfb__chip--active' : '' }} {{ item.is_system ? 'tfb__chip--system' : '' }}"
+          style="{{ item.selected ? ('background:' + (item.style || defaultChipColor) + ';border-color:' + (item.style || defaultChipColor) + ';') : '' }}"
+          data-id="{{ item.id }}"
+          bindtap="onToggleTag"
+          hover-class="none"
+        >
+          <text class="tfb__chip-name">{{ item.name }}</text>
+          <text wx:if="{{ item.is_system }}" class="tfb__chip-lock">🔒</text>
+        </view>
+      </view>
+
+      <!-- 空态 -->
+      <view wx:else class="tfb__empty">还没有标签，去词典创建一个吧</view>
+    </block>
+
+  </view>
+</view>

@@ -1,0 +1,63 @@
+<!-- practice.wxml —— 练习 hub（tab 页） -->
+<view class="page page--tab">
+
+  <view class="practice-hero">
+    <text class="h1">练习中心</text>
+    <text class="text-2 practice-hero__sub">选一种方式，开始今天的单词训练</text>
+  </view>
+
+  <view class="section-title">🎯 词语练习</view>
+
+  <!-- 标签筛选：仅作用于下方四种词语练习，组件自身持久化选择（hub 无需存） -->
+  <view class="practice-filter-hint text-3">标签筛选仅作用于下方词语练习</view>
+  <tag-filter-bar bind:change="onTagFilterChange" />
+
+  <view class="mode-list">
+    <view
+      wx:for="{{modes}}"
+      wx:key="key"
+      class="mode-card mode-card--lg"
+      style="--mode: {{item.colorVar}}"
+      hover-class="none"
+      bindtap="goMode"
+      data-path="{{item.path}}"
+    >
+      <view class="row gap-20">
+        <view class="placeholder-img placeholder-img--sm mode-card__art">{{item.emoji}}</view>
+        <view class="flex-1 col">
+          <view class="row row--between">
+            <text class="mode-card__title">{{item.name}}</text>
+            <view class="mode-card__pill">
+              <text class="mode-card__count">{{item.count}}</text>
+              <text class="mode-card__unit">待练</text>
+            </view>
+          </view>
+          <text class="mode-card__desc mode-card__desc--lg">{{item.brief}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section-title">📖 文章练习</view>
+  <view class="article-entries">
+    <view class="article-entry" hover-class="none" bindtap="goArticle" data-path="/pages/article-instant/article-instant">
+      <view class="article-entry__icon article-entry__icon--instant">⚡</view>
+      <view class="flex-1 col">
+        <text class="article-entry__title">即时文章</text>
+        <text class="article-entry__desc text-3">挑词 AI 生成短文，边读边点词查义</text>
+      </view>
+      <text class="article-entry__arrow">›</text>
+    </view>
+    <view class="article-entry" hover-class="none" bindtap="goArticle" data-path="/pages/article-library/article-library">
+      <view class="article-entry__icon article-entry__icon--library">📚</view>
+      <view class="flex-1 col">
+        <text class="article-entry__title">收录文章</text>
+        <text class="article-entry__desc text-3">回看收藏过的文章，反复精读</text>
+      </view>
+      <text class="article-entry__arrow">›</text>
+    </view>
+  </view>
+
+  <view class="practice-tip text-3">坚持每天练习，记得更牢 🔥</view>
+
+</view>

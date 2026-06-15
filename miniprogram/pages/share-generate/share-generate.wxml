@@ -1,0 +1,115 @@
+<!-- pages/share-generate/share-generate.wxml —— 生成分享码（普通页）
+     复刻 H5 ShareGenerateModal.vue：分享范围/类型两组单选 + 按标签时的标签多选 +
+     生成后的码展示（等宽大号 + 有效期 + 复制）。无 vant：单选/多选 chip 自绘；
+     蓝色活力风复用 app.wxss 全局类。 -->
+<view class="page sg">
+
+  <!-- ============ 分享设置 ============ -->
+  <view class="section-title">📤 分享设置</view>
+  <view class="card sg-card">
+
+    <!-- 分享范围：全部 / 按标签（单选 chip） -->
+    <view class="sg-field">
+      <text class="sg-field__label">分享范围</text>
+      <view class="sg-chips">
+        <view
+          class="sg-chip {{shareType === 0 ? 'sg-chip--active' : ''}}"
+          data-value="0"
+          bindtap="onPickShareType"
+        >全部</view>
+        <view
+          class="sg-chip {{shareType === 1 ? 'sg-chip--active' : ''}}"
+          data-value="1"
+          bindtap="onPickShareType"
+        >按标签</view>
+      </view>
+    </view>
+
+    <!-- 类型：全部 / 单词 / 短语（单选 chip） -->
+    <view class="sg-field sg-field--last">
+      <text class="sg-field__label">类型</text>
+      <view class="sg-chips">
+        <view
+          class="sg-chip {{wordType === 0 ? 'sg-chip--active' : ''}}"
+          data-value="0"
+          bindtap="onPickWordType"
+        >全部</view>
+        <view
+          class="sg-chip {{wordType === 1 ? 'sg-chip--active' : ''}}"
+          data-value="1"
+          bindtap="onPickWordType"
+        >单词</view>
+        <view
+          class="sg-chip {{wordType === 2 ? 'sg-chip--active' : ''}}"
+          data-value="2"
+          bindtap="onPickWordType"
+        >短语</view>
+      </view>
+    </view>
+
+  </view>
+
+  <!-- ============ 选择标签（仅当按标签分享时） ============ -->
+  <block wx:if="{{shareType === 1}}">
+    <view class="section-title">
+      🏷️ 选择标签
+      <text wx:if="{{selectedTagCount > 0}}" class="sg-count">已选 {{selectedTagCount}} 个</text>
+    </view>
+    <view class="card sg-tags">
+
+      <!-- 加载态 -->
+      <view wx:if="{{tagsLoading}}" class="sg-tags__loading">加载中…</view>
+
+      <!-- 空态（H5 文案：你还没有创建过标签） -->
+      <view wx:elif="{{tagOptions.length === 0}}" class="sg-empty">
+        <view class="sg-empty__emoji">🏷️</view>
+        <text class="sg-empty__text">你还没有创建过标签</text>
+      </view>
+
+      <!-- 标签多选 chip：未选=描边灰，选中=注入标签色实底（样式串已在 ts 预计算） -->
+      <view wx:else class="sg-tags__chips">
+        <view
+          wx:for="{{tagOptions}}"
+          wx:key="id"
+          class="sg-tag {{item.selected ? 'sg-tag--on' : ''}}"
+          style="{{item.selected ? item.style : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onToggleTag"
+        >{{item.name}}</view>
+      </view>
+
+    </view>
+  </block>
+
+  <!-- ============ 生成结果（覆盖式展示，再生成会先清掉） ============ -->
+  <block wx:if="{{token}}">
+    <view class="section-title">🎁 分享码</view>
+    <view class="card sg-result">
+      <view class="sg-token">
+        <text user-select>{{token}}</text>
+      </view>
+      <view class="sg-result__meta">
+        <text class="sg-result__tip">⏰ 5 分钟内有效，复制后发给朋友</text>
+        <text class="sg-result__expire">有效期至 {{expiresText}}</text>
+      </view>
+      <button class="btn-primary sg-copy" hover-class="none" bindtap="onCopy">复制分享码</button>
+    </view>
+  </block>
+
+  <!-- ============ 底部主操作：未生成 → 生成；已生成 → 再生成一个（同 H5 按钮切换） ============ -->
+  <button
+    wx:if="{{!token}}"
+    class="btn-primary sg-submit"
+    hover-class="none"
+    loading="{{generating}}"
+    disabled="{{generating}}"
+    bindtap="onGenerate"
+  >生成分享码</button>
+  <button
+    wx:else
+    class="btn-ghost sg-submit"
+    hover-class="none"
+    bindtap="onRegenerate"
+  >再生成一个</button>
+
+</view>

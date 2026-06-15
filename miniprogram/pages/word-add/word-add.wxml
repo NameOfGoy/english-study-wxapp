@@ -1,0 +1,188 @@
+<!-- pages/word-add/word-add.wxml —— 添加词条（普通页）
+     复刻 H5 AddWordModal/AddPhraseModal：顶部 单词/短语 切换，两套表单互斥渲染。
+     无 vant：表单与词性选择器自绘；蓝色活力风复用 app.wxss 全局类。 -->
+<view class="page wa">
+
+  <!-- 顶部 单词 / 短语 切换 -->
+  <view class="wa-tabs">
+    <view
+      class="wa-tab {{kind === 'word' ? 'wa-tab--active' : ''}}"
+      data-kind="word"
+      bindtap="onSwitchKind"
+    >单词</view>
+    <view
+      class="wa-tab {{kind === 'phrase' ? 'wa-tab--active' : ''}}"
+      data-kind="phrase"
+      bindtap="onSwitchKind"
+    >短语</view>
+  </view>
+
+  <!-- ============ 单词表单 ============ -->
+  <block wx:if="{{kind === 'word'}}">
+    <view class="card wa-card">
+      <!-- 单词 -->
+      <view class="wa-field">
+        <text class="wa-field__label">单词 <text class="wa-req">*</text></text>
+        <input
+          class="wa-field__input"
+          placeholder="请输入英文单词"
+          placeholder-class="wa-ph"
+          value="{{wordForm.word}}"
+          bindinput="onWordInput"
+        />
+      </view>
+
+      <!-- 英式音标（可空） -->
+      <view class="wa-field">
+        <text class="wa-field__label">英式音标</text>
+        <input
+          class="wa-field__input"
+          placeholder="如 /wɜːd/（可空）"
+          placeholder-class="wa-ph"
+          value="{{wordForm.ukPhonetic}}"
+          bindinput="onUkPhoneticInput"
+        />
+      </view>
+
+      <!-- 美式音标（可空） -->
+      <view class="wa-field wa-field--last">
+        <text class="wa-field__label">美式音标</text>
+        <input
+          class="wa-field__input"
+          placeholder="如 /wɝːd/（可空）"
+          placeholder-class="wa-ph"
+          value="{{wordForm.usPhonetic}}"
+          bindinput="onUsPhoneticInput"
+        />
+      </view>
+    </view>
+
+    <!-- 词性块（至少一个；每块=词性选择 + 释义） -->
+    <view class="section-title">📝 释义（按词性）</view>
+    <view class="card wa-pos" wx:for="{{wordForm.pos}}" wx:for-item="block" wx:key="index">
+      <view class="wa-pos__head">
+        <text class="wa-pos__title">词性 {{index + 1}}</text>
+        <view
+          wx:if="{{wordForm.pos.length > 1}}"
+          class="wa-pos__remove"
+          data-index="{{index}}"
+          bindtap="onRemovePos"
+        >移除</view>
+      </view>
+
+      <!-- 词性选择（自绘 chip 网格，选中态高亮） -->
+      <view class="wa-pos__chips">
+        <view
+          wx:for="{{posOptions}}"
+          wx:for-item="opt"
+          wx:key="value"
+          class="wa-chip {{block.pos === opt.value ? 'wa-chip--active' : ''}}"
+          data-index="{{index}}"
+          data-pos="{{opt.value}}"
+          bindtap="onPickPos"
+        >{{opt.label}}</view>
+      </view>
+
+      <!-- 该词性的释义 -->
+      <textarea
+        class="wa-pos__translation"
+        placeholder="请输入该词性下的中文释义"
+        placeholder-class="wa-ph"
+        value="{{block.translation}}"
+        data-index="{{index}}"
+        bindinput="onPosTranslationInput"
+        auto-height
+      />
+    </view>
+
+    <!-- 新增词性块 -->
+    <view class="wa-add-pos" bindtap="onAddPos">＋ 添加词性</view>
+
+    <!-- 自动生成图片开关 -->
+    <view class="card wa-gen">
+      <view class="col flex-1">
+        <text class="wa-gen__title">自动生成图片</text>
+        <text class="wa-gen__sub">由 AI 为该单词的词性生成配图</text>
+      </view>
+      <switch
+        checked="{{wordForm.isGeneratePicture}}"
+        color="#3DA5F4"
+        bindchange="onWordGenToggle"
+      />
+    </view>
+
+    <!-- 提交 -->
+    <button
+      class="btn-primary wa-submit {{!wordValid ? 'wa-submit--disabled' : ''}}"
+      hover-class="none"
+      loading="{{submitting}}"
+      disabled="{{!wordValid || submitting}}"
+      bindtap="onSubmit"
+    >添加单词</button>
+  </block>
+
+  <!-- ============ 短语表单 ============ -->
+  <block wx:else>
+    <view class="card wa-card">
+      <!-- 短语 -->
+      <view class="wa-field">
+        <text class="wa-field__label">短语 <text class="wa-req">*</text></text>
+        <input
+          class="wa-field__input"
+          placeholder="请输入英文短语"
+          placeholder-class="wa-ph"
+          value="{{phraseForm.phrase}}"
+          bindinput="onPhraseInput"
+        />
+      </view>
+
+      <!-- 中文翻译 -->
+      <view class="wa-field wa-field--col">
+        <text class="wa-field__label">中文翻译</text>
+        <textarea
+          class="wa-field__textarea"
+          placeholder="请输入中文释义"
+          placeholder-class="wa-ph"
+          value="{{phraseForm.translation}}"
+          bindinput="onPhraseTranslationInput"
+          auto-height
+        />
+      </view>
+
+      <!-- 发音（可空） -->
+      <view class="wa-field wa-field--last">
+        <text class="wa-field__label">发音</text>
+        <input
+          class="wa-field__input"
+          placeholder="如 /ˈfreɪz/（可空）"
+          placeholder-class="wa-ph"
+          value="{{phraseForm.pronunciation}}"
+          bindinput="onPronunciationInput"
+        />
+      </view>
+    </view>
+
+    <!-- 自动生成图片开关 -->
+    <view class="card wa-gen">
+      <view class="col flex-1">
+        <text class="wa-gen__title">自动生成图片</text>
+        <text class="wa-gen__sub">由 AI 为该短语生成配图</text>
+      </view>
+      <switch
+        checked="{{phraseForm.isGeneratePicture}}"
+        color="#3DA5F4"
+        bindchange="onPhraseGenToggle"
+      />
+    </view>
+
+    <!-- 提交 -->
+    <button
+      class="btn-primary wa-submit {{!phraseValid ? 'wa-submit--disabled' : ''}}"
+      hover-class="none"
+      loading="{{submitting}}"
+      disabled="{{!phraseValid || submitting}}"
+      bindtap="onSubmit"
+    >添加短语</button>
+  </block>
+
+</view>

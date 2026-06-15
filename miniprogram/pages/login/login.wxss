@@ -1,0 +1,149 @@
+/* login.wxss —— 登录页布局（仅页面局部类，配色复用全局 CSS 变量，不覆盖全局类） */
+
+.login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ---- 顶部品牌区 ---- */
+.login__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 96rpx 0 56rpx;
+}
+.login__logo {
+  width: 144rpx;
+  height: 144rpx;
+  border-radius: var(--r-card);
+  background: var(--primary-grad);
+  box-shadow: 0 12rpx 32rpx rgba(61, 165, 244, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 78rpx;
+}
+.login__title {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: var(--text);
+  margin-top: 28rpx;
+}
+.login__subtitle {
+  font-size: 26rpx;
+  color: var(--text-2);
+  margin-top: 12rpx;
+}
+
+/* ---- 表单卡片 ---- */
+.login__form {
+  width: 100%;
+}
+.login__field + .login__field {
+  margin-top: 28rpx;
+}
+.login__label {
+  display: block;
+  font-size: 26rpx;
+  color: var(--text-2);
+  margin-bottom: 14rpx;
+}
+.login__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  height: 88rpx;
+  padding: 0 28rpx;
+  border-radius: var(--r-inner);
+  background: #F2F6FC;
+  border: 2rpx solid var(--line);
+  box-sizing: border-box;
+}
+.login__icon {
+  font-size: 32rpx;
+}
+.login__input {
+  flex: 1;
+  font-size: 30rpx;
+  color: var(--text);
+}
+.login__placeholder {
+  color: var(--text-3);
+}
+
+/* ---- 按钮 ---- */
+.login__submit {
+  margin-top: 48rpx;
+}
+
+/* ---- 底部提示 ---- */
+.login__tip {
+  margin-top: 40rpx;
+  text-align: center;
+}
+
+/* ============ mode=auto：自动微信登录中（转圈占位卡） ============ */
+.login__auto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 72rpx 32rpx;
+}
+.login__auto-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login__spinner {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  border: 6rpx solid rgba(61, 165, 244, 0.18);
+  border-top-color: var(--primary);
+  animation: login-spin 0.8s linear infinite;
+}
+@keyframes login-spin {
+  to { transform: rotate(360deg); }
+}
+.login__auto-text {
+  margin-top: 28rpx;
+  font-size: 28rpx;
+  color: var(--text-2);
+}
+
+/* ============ mode=choice / link / manual：卡内标题 ============ */
+.login__choice-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: var(--text);
+  text-align: center;
+}
+.login__choice-tip {
+  margin-top: 14rpx;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* choice：两个动作按钮之间的间距 */
+.login__choice-register {
+  margin-top: 24rpx;
+}
+
+/* link / manual：标题与首个输入框之间留白 */
+.login__link .login__field:first-of-type,
+.login__manual .login__field:first-of-type {
+  margin-top: 36rpx;
+}
+
+/* ============ 底部次要入口（用账号登录 / 返回 / 用微信登录） ============ */
+.login__alt {
+  margin-top: 32rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: var(--primary);
+  font-weight: 500;
+}
+.login__alt:active {
+  opacity: 0.7;
+}

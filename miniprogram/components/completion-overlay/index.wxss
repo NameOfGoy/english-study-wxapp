@@ -1,0 +1,109 @@
+/* components/completion-overlay/index.wxss —— 蓝色活力风全屏蒙层 */
+/* addGlobalClass:true 已开启：可复用 app.wxss 的 .btn-primary / .btn-ghost 与 CSS 变量 */
+
+.co {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(242, 246, 252, 0.96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+  box-sizing: border-box;
+}
+
+/* ---- 卡片 ---- */
+.co__card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 600rpx;
+  background: var(--card, #fff);
+  border-radius: var(--r-card, 24rpx);
+  box-shadow: var(--shadow-lg, 0 12rpx 32rpx rgba(20, 30, 50, 0.1));
+  padding: 56rpx 40rpx 40rpx;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.co__icon {
+  width: 144rpx;
+  height: 144rpx;
+  margin: 0 auto 24rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 84rpx;
+}
+.co__icon--win {
+  background: rgba(255, 176, 32, 0.16);
+}
+.co__icon--empty {
+  background: rgba(61, 165, 244, 0.12);
+}
+
+.co__title {
+  font-size: 38rpx;
+  font-weight: bold;
+  color: var(--text, #1f2937);
+  margin-bottom: 12rpx;
+}
+.co__sub {
+  font-size: 26rpx;
+  color: var(--text-2, #6b7280);
+  margin-bottom: 20rpx;
+  line-height: 1.5;
+}
+.co__stats {
+  font-size: 28rpx;
+  color: var(--text-2, #6b7280);
+  margin-bottom: 36rpx;
+}
+.co__num {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: var(--streak, #ff6b35);
+  margin: 0 4rpx;
+}
+
+.co__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+/* ---- 简化撒花 ---- */
+.co__confetti {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.co__piece {
+  position: absolute;
+  top: -40rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 4rpx;
+  opacity: 0;
+  animation: co-fall 2.6s linear infinite;
+}
+@keyframes co-fall {
+  0% {
+    transform: translateY(-40rpx) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(160vh) rotate(720deg);
+    opacity: 0;
+  }
+}

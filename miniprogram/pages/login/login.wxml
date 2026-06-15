@@ -1,0 +1,137 @@
+<!-- login.wxml —— 微信登录页（自动登录 + 未关联弹层选关联/注册 + 账号登录兜底） -->
+<!-- 状态机 mode: 'auto' | 'choice' | 'link' | 'manual'，复用全局 .page/.card/.btn-primary/.btn-ghost/.muted -->
+<view class="page login">
+  <!-- 顶部 logo + 标题（各 mode 公用） -->
+  <view class="login__brand">
+    <view class="login__logo">📚</view>
+    <view class="login__title">单词记忆助手</view>
+    <view class="login__subtitle">每天进步一点点</view>
+  </view>
+
+  <!-- ===== mode=auto：自动微信登录中 ===== -->
+  <view wx:if="{{mode === 'auto'}}" class="card login__form login__auto">
+    <view class="login__auto-spinner">
+      <view class="login__spinner"></view>
+    </view>
+    <view class="login__auto-text">微信登录中…</view>
+  </view>
+
+  <!-- ===== mode=choice：该微信未关联账号 ===== -->
+  <view wx:elif="{{mode === 'choice'}}" class="card login__form login__choice">
+    <view class="login__choice-title">该微信还没有账号</view>
+    <view class="login__choice-tip muted">你可以关联已有账号，或直接注册一个新账号</view>
+
+    <button
+      class="btn-primary login__submit"
+      bindtap="goLink"
+    >关联已有账号</button>
+
+    <button
+      class="btn-ghost login__choice-register"
+      loading="{{submitting}}"
+      disabled="{{submitting}}"
+      bindtap="onRegister"
+    >注册新账号</button>
+
+    <view class="login__alt" bindtap="goManual">用账号密码登录 ›</view>
+  </view>
+
+  <!-- ===== mode=link：关联已有账号 ===== -->
+  <view wx:elif="{{mode === 'link'}}" class="card login__form login__link">
+    <view class="login__choice-title">关联已有账号</view>
+    <view class="login__choice-tip muted">验证账号密码后绑定到此微信</view>
+
+    <view class="login__field">
+      <text class="login__label">账号</text>
+      <view class="login__input-wrap">
+        <text class="login__icon">👤</text>
+        <input
+          class="login__input"
+          type="text"
+          placeholder="请输入账号"
+          placeholder-class="login__placeholder"
+          value="{{account}}"
+          confirm-type="next"
+          bindinput="onAccountInput"
+        />
+      </view>
+    </view>
+
+    <view class="login__field">
+      <text class="login__label">密码</text>
+      <view class="login__input-wrap">
+        <text class="login__icon">🔒</text>
+        <input
+          class="login__input"
+          type="password"
+          password="{{true}}"
+          placeholder="请输入密码"
+          placeholder-class="login__placeholder"
+          value="{{password}}"
+          confirm-type="done"
+          bindinput="onPasswordInput"
+          bindconfirm="onLink"
+        />
+      </view>
+    </view>
+
+    <button
+      class="btn-primary login__submit"
+      loading="{{submitting}}"
+      disabled="{{submitting}}"
+      bindtap="onLink"
+    >确认关联并登录</button>
+
+    <view class="login__alt" bindtap="backToChoice">‹ 返回</view>
+  </view>
+
+  <!-- ===== mode=manual：账号密码登录 ===== -->
+  <view wx:else class="card login__form login__manual">
+    <view class="login__choice-title">账号登录</view>
+
+    <view class="login__field">
+      <text class="login__label">账号</text>
+      <view class="login__input-wrap">
+        <text class="login__icon">👤</text>
+        <input
+          class="login__input"
+          type="text"
+          placeholder="请输入账号"
+          placeholder-class="login__placeholder"
+          value="{{account}}"
+          confirm-type="next"
+          bindinput="onAccountInput"
+        />
+      </view>
+    </view>
+
+    <view class="login__field">
+      <text class="login__label">密码</text>
+      <view class="login__input-wrap">
+        <text class="login__icon">🔒</text>
+        <input
+          class="login__input"
+          type="password"
+          password="{{true}}"
+          placeholder="请输入密码"
+          placeholder-class="login__placeholder"
+          value="{{password}}"
+          confirm-type="done"
+          bindinput="onPasswordInput"
+          bindconfirm="onManual"
+        />
+      </view>
+    </view>
+
+    <button
+      class="btn-primary login__submit"
+      loading="{{submitting}}"
+      disabled="{{submitting}}"
+      bindtap="onManual"
+    >登录</button>
+
+    <view class="login__alt" bindtap="autoWxLogin">用微信登录 ›</view>
+  </view>
+
+  <view class="login__tip muted">登录即代表同意服务条款与隐私政策</view>
+</view>

@@ -1,0 +1,87 @@
+/* spot 页特有微调：颜色一律 var(--xxx)，不写死 */
+
+/* 顶部抽查进度条 */
+.spot-head {
+  margin-bottom: 24rpx;
+}
+.spot-head__emoji { font-size: 32rpx; }
+.spot-head__title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.spot-head__count {
+  font-size: 28rpx;
+  color: var(--text-2);
+  font-weight: 600;
+}
+.spot-head__cur {
+  font-size: 36rpx;
+  color: var(--mode-spot);
+  font-weight: bold;
+}
+.spot-bar {
+  margin-top: 16rpx;
+  width: 100%;
+  height: 14rpx;
+  border-radius: var(--r-pill);
+  background: rgba(155, 109, 255, 0.14);
+  overflow: hidden;
+}
+.spot-bar__fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--mode-spot);
+  transition: width 0.3s ease;
+}
+
+/* 卡片内容微调 */
+.spot-card { padding-top: 36rpx; }
+
+.spot-stage { margin-top: 28rpx; }
+.spot-tip {
+  font-size: 28rpx;
+  color: var(--text-2);
+}
+
+.spot-divider {
+  width: 100%;
+  height: 2rpx;
+  background: var(--line);
+  margin: 28rpx 0 24rpx;
+}
+.spot-pos {
+  font-size: 24rpx;
+  color: var(--mode-spot);
+  font-weight: 600;
+}
+
+/* 例句区 */
+.spot-examples {
+  width: 100%;
+  margin-top: 24rpx;
+}
+.spot-example {
+  padding: 20rpx 0;
+}
+.spot-example + .spot-example {
+  border-top: 2rpx solid var(--line);
+}
+.spot-example__en {
+  display: block;
+  font-size: 28rpx;
+  color: var(--text);
+  line-height: 1.5;
+}
+.spot-example__zh {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-2);
+  margin-top: 8rpx;
+  line-height: 1.4;
+}
+
+/* 底部操作区 */
+.spot-actions {
+  margin-top: 32rpx;
+}

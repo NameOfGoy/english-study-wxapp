@@ -1,0 +1,47 @@
+/* home.wxss —— 仅页面特有微调，颜色/圆角/阴影一律用全局变量与类 */
+
+/* 顶部问候区 */
+.home-greet {
+  margin: 12rpx 4rpx 8rpx;
+}
+.home-greet__title {
+  margin-top: 6rpx;
+}
+.home-greet__hi {
+  font-size: 40rpx;
+  line-height: 1;
+}
+
+/* 今日进度卡 */
+.home-today__title {
+  margin: 0 0 12rpx;
+}
+.home-today__sub {
+  font-size: 26rpx;
+  line-height: 1.5;
+}
+.home-today__tip {
+  font-size: 24rpx;
+  margin-top: 12rpx;
+}
+
+/* 四模式 2x2 网格 */
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24rpx;
+}
+.mode-grid__head {
+  display: flex;
+  align-items: center;
+}
+.mode-grid__title {
+  display: block;
+  margin-top: 20rpx;
+}
+.mode-grid__desc {
+  display: block;
+  margin-top: 8rpx;
+  line-height: 1.45;
+  min-height: 68rpx;
+}

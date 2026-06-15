@@ -1,0 +1,367 @@
+<!-- pages/word-detail/word-detail.wxml —— 词条详情（普通页，query: id + type）
+     对照 H5 WordDetailView.vue / PhraseDetailView.vue 复刻：主词 + 音标(🔊) + 词性释义/例句/配图。
+     顶部操作区四入口：释义 / 状态 / 标签 / 删除。弹层自绘 fixed 蒙层（无组件库，复用 app.wxss）。 -->
+<view class="page wd" bindtouchstart="onTouchStart" bindtouchend="onTouchEnd">
+
+  <!-- 加载态 -->
+  <view wx:if="{{loading}}" class="wd-loading">加载中…</view>
+
+  <!-- 加载失败态 -->
+  <view wx:elif="{{loadError}}" class="wd-error">
+    <view class="wd-error__emoji">😵</view>
+    <text class="wd-error__text">加载失败</text>
+    <button class="btn-ghost wd-error__btn" hover-class="none" bindtap="loadDetail">重试</button>
+  </view>
+
+  <block wx:else>
+
+    <!-- ============ 主词卡 ============ -->
+    <view class="card wd-hero">
+      <view class="wd-hero__word">{{word}}</view>
+
+      <!-- 单词：英美音标 + 发音 -->
+      <block wx:if="{{type === 1}}">
+        <view wx:if="{{ukPhonetic}}" class="wd-phonetic">
+          <text class="wd-phonetic__label">英</text>
+          <text class="wd-phonetic__text">{{ukPhonetic}}</text>
+          <view class="btn-sound wd-phonetic__play" data-src="{{ukAudioUrl}}" bindtap="onPlay">🔊</view>
+        </view>
+        <view wx:if="{{usPhonetic}}" class="wd-phonetic">
+          <text class="wd-phonetic__label">美</text>
+          <text class="wd-phonetic__text">{{usPhonetic}}</text>
+          <view class="btn-sound wd-phonetic__play" data-src="{{usAudioUrl}}" bindtap="onPlay">🔊</view>
+        </view>
+      </block>
+
+      <!-- 短语：发音 -->
+      <block wx:else>
+        <view wx:if="{{phrasePronUrl}}" class="wd-phonetic wd-phonetic--center">
+          <view class="btn-sound wd-phonetic__play" data-src="{{phrasePronUrl}}" bindtap="onPlay">🔊 发音</view>
+        </view>
+      </block>
+    </view>
+
+    <!-- ============ 单词：词性释义列表 ============ -->
+    <block wx:if="{{type === 1}}">
+      <view class="section-title">📖 词性释义</view>
+      <view wx:for="{{posList}}" wx:key="index" class="card wd-pos">
+        <view class="wd-pos__head">
+          <text class="wd-pos__sw">{{item.sw}}</text>
+          <text class="wd-pos__cn">{{item.cn}}</text>
+        </view>
+        <view wx:if="{{item.translation}}" class="wd-pos__trans">{{item.translation}}</view>
+
+        <!-- 变化形式 -->
+        <view wx:if="{{item.exchanges.length > 0}}" class="wd-exchange">
+          <text class="wd-sub-title">变化形式</text>
+          <view class="wd-exchange__list">
+            <view wx:for="{{item.exchanges}}" wx:for-item="ex" wx:key="label" class="wd-exchange__item">
+              <text class="wd-exchange__label">{{ex.label}}</text>
+              <text class="wd-exchange__value">{{ex.value}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 例句 -->
+        <view wx:if="{{item.examples.length > 0}}" class="wd-examples">
+          <text class="wd-sub-title">例句</text>
+          <view wx:for="{{item.examples}}" wx:for-item="ex" wx:key="en" class="wd-example">
+            <text wx:if="{{ex.en}}" class="wd-example__en">{{ex.en}}</text>
+            <text wx:if="{{ex.zh}}" class="wd-example__zh">{{ex.zh}}</text>
+          </view>
+        </view>
+
+        <!-- 配图（失败回退 emoji 占位） -->
+        <view wx:if="{{item.pictureUrl}}" class="wd-picture">
+          <image
+            wx:if="{{!picErrorMap[item.pictureUrl]}}"
+            class="wd-picture__img"
+            src="{{item.pictureUrl}}"
+            mode="aspectFill"
+            data-url="{{item.pictureUrl}}"
+            binderror="onPicError"
+          />
+          <view wx:else class="placeholder-img placeholder-img--sm" style="--mode: var(--mode-study)">🖼️</view>
+        </view>
+
+        <!-- 配图入口（AI 生成 / 上传） -->
+        <view
+          wx:if="{{item.id > 0}}"
+          class="wd-pic-entry"
+          data-kind="word"
+          data-id="{{item.id}}"
+          data-url="{{item.pictureUrl}}"
+          data-title="{{item.sw}}"
+          bindtap="openPicEdit"
+        >🖼️ {{item.pictureUrl ? '更换配图' : '添加配图'}}</view>
+      </view>
+    </block>
+
+    <!-- ============ 短语：释义 / 例句 / 图片 ============ -->
+    <block wx:else>
+      <view class="section-title">📝 释义</view>
+      <view class="card wd-phrase-trans">{{phraseTranslation || '暂无释义'}}</view>
+
+      <block wx:if="{{phraseExamples.length > 0}}">
+        <view class="section-title">💬 例句</view>
+        <view class="card">
+          <view wx:for="{{phraseExamples}}" wx:for-item="ex" wx:key="en" class="wd-example">
+            <text wx:if="{{ex.en}}" class="wd-example__en">{{ex.en}}</text>
+            <text wx:if="{{ex.zh}}" class="wd-example__zh">{{ex.zh}}</text>
+          </view>
+        </view>
+      </block>
+
+      <view class="section-title">🖼️ 图片</view>
+      <view class="card wd-phrase-pic">
+        <view wx:if="{{phrasePictureUrl}}" class="wd-picture">
+          <image
+            wx:if="{{!picErrorMap[phrasePictureUrl]}}"
+            class="wd-picture__img"
+            src="{{phrasePictureUrl}}"
+            mode="aspectFill"
+            data-url="{{phrasePictureUrl}}"
+            binderror="onPicError"
+          />
+          <view wx:else class="placeholder-img" style="--mode: var(--mode-spot)">🖼️</view>
+        </view>
+        <view
+          class="wd-pic-entry"
+          data-kind="phrase"
+          data-id="{{id}}"
+          data-url="{{phrasePictureUrl}}"
+          data-title="{{word}}"
+          bindtap="openPicEdit"
+        >🖼️ {{phrasePictureUrl ? '更换配图' : '添加配图'}}</view>
+      </view>
+    </block>
+
+    <!-- ============ 底部操作区 ============ -->
+    <view class="wd-actions">
+      <view class="wd-action" bindtap="openTransEdit">
+        <view class="wd-action__icon">✏️</view>
+        <text class="wd-action__label">释义</text>
+      </view>
+      <view class="wd-action" bindtap="openStatusEdit">
+        <view class="wd-action__icon">🎯</view>
+        <text class="wd-action__label">状态</text>
+      </view>
+      <view class="wd-action" bindtap="openTagEdit">
+        <view class="wd-action__icon">🏷️</view>
+        <text class="wd-action__label">标签</text>
+      </view>
+      <view class="wd-action wd-action--danger" bindtap="onDelete">
+        <view class="wd-action__icon">🗑️</view>
+        <text class="wd-action__label">删除</text>
+      </view>
+    </view>
+
+  </block>
+
+  <!-- ============ 弹层①：释义编辑 ============ -->
+  <view wx:if="{{transVisible}}" class="wd-mask" catchtap="closeTransEdit">
+    <view class="wd-sheet" catchtap="noop">
+      <view class="wd-sheet__header">
+        <text class="wd-sheet__title">编辑释义</text>
+        <view class="wd-sheet__close" bindtap="closeTransEdit">✕</view>
+      </view>
+      <view class="wd-sheet__word">{{word}}</view>
+      <view class="wd-sheet__body">
+        <view wx:for="{{transItems}}" wx:key="id" class="wd-trans-row">
+          <view wx:if="{{item.posLabel}}" class="wd-trans-row__pos">{{item.posLabel}}</view>
+          <textarea
+            class="wd-trans-row__input"
+            value="{{item.translation}}"
+            placeholder="请输入释义"
+            placeholder-class="wd-ph"
+            maxlength="200"
+            auto-height
+            data-index="{{index}}"
+            bindinput="onTransInput"
+          />
+        </view>
+        <text wx:if="{{!transCanSubmit}}" class="wd-hint">至少保留一条非空释义</text>
+      </view>
+      <view class="wd-sheet__actions">
+        <button class="btn-ghost" hover-class="none" bindtap="closeTransEdit">取消</button>
+        <button
+          class="btn-primary {{!transCanSubmit ? 'wd-btn--disabled' : ''}}"
+          hover-class="none"
+          loading="{{transSubmitting}}"
+          disabled="{{!transCanSubmit || transSubmitting}}"
+          bindtap="onTransSubmit"
+        >保存</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 弹层②：状态编辑 ============ -->
+  <view wx:if="{{statusVisible}}" class="wd-mask" catchtap="closeStatusEdit">
+    <view class="wd-sheet" catchtap="noop">
+      <view class="wd-sheet__header">
+        <text class="wd-sheet__title">编辑状态</text>
+        <view class="wd-sheet__close" bindtap="closeStatusEdit">✕</view>
+      </view>
+      <view class="wd-sheet__word">{{word}}</view>
+      <view class="wd-sheet__body">
+        <view
+          wx:for="{{statusOptions}}"
+          wx:key="value"
+          class="wd-status-opt {{statusValue === item.value ? 'wd-status-opt--active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onStatusPick"
+        >
+          <view class="wd-status-opt__radio">
+            <view wx:if="{{statusValue === item.value}}" class="wd-status-opt__dot wd-dot--{{item.dot}}"></view>
+          </view>
+          <text class="wd-status-opt__label">{{item.label}}</text>
+        </view>
+      </view>
+      <view class="wd-sheet__actions">
+        <button class="btn-ghost" hover-class="none" bindtap="closeStatusEdit">取消</button>
+        <button
+          class="btn-primary"
+          hover-class="none"
+          loading="{{statusSubmitting}}"
+          disabled="{{statusSubmitting}}"
+          bindtap="onStatusSubmit"
+        >保存</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 弹层③：标签编辑 ============ -->
+  <view wx:if="{{tagVisible}}" class="wd-mask" catchtap="closeTagEdit">
+    <view class="wd-sheet" catchtap="noop">
+      <view class="wd-sheet__header">
+        <text class="wd-sheet__title">编辑标签</text>
+        <view class="wd-sheet__close" bindtap="closeTagEdit">✕</view>
+      </view>
+      <view class="wd-sheet__word">{{word}}</view>
+      <view class="wd-sheet__body">
+        <view class="wd-tag-grid">
+          <view
+            wx:for="{{tagList}}"
+            wx:key="id"
+            class="wd-tag-pill {{item.selected ? 'wd-tag-pill--on' : ''}}"
+            style="{{item.selected ? 'background:' + item.style : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onTagToggle"
+          >{{item.name}}</view>
+
+          <!-- 新建入口 -->
+          <view class="wd-tag-pill wd-tag-pill--new" bindtap="openTagCreate">＋ 新建</view>
+          <view wx:if="{{tagList.length === 0}}" class="wd-tag-empty">暂无可选标签，点「新建」创建</view>
+        </view>
+
+        <!-- 新建标签子表单 -->
+        <view wx:if="{{tagCreateOpen}}" class="wd-create">
+          <view class="wd-create__field">
+            <text class="wd-create__label">名称</text>
+            <input
+              class="wd-create__input"
+              placeholder="不超过 20 字"
+              placeholder-class="wd-ph"
+              maxlength="20"
+              value="{{tagNewName}}"
+              bindinput="onTagNameInput"
+            />
+          </view>
+          <view class="wd-create__color">
+            <text class="wd-create__label">颜色</text>
+            <view class="wd-create__grid">
+              <view
+                wx:for="{{tagPalette}}"
+                wx:key="*this"
+                class="wd-dot-color {{tagNewColor === item ? 'wd-dot-color--active' : ''}}"
+                style="background: {{item}}"
+                data-color="{{item}}"
+                bindtap="onTagColorPick"
+              ></view>
+            </view>
+          </view>
+          <view class="wd-create__actions">
+            <button class="btn-ghost wd-create__btn" hover-class="none" bindtap="cancelTagCreate">取消</button>
+            <button
+              class="btn-primary wd-create__btn {{!tagNewNameTrimmed ? 'wd-btn--disabled' : ''}}"
+              hover-class="none"
+              loading="{{tagCreating}}"
+              disabled="{{!tagNewNameTrimmed || tagCreating}}"
+              bindtap="createTag"
+            >创建</button>
+          </view>
+        </view>
+      </view>
+      <view class="wd-sheet__actions">
+        <button class="btn-ghost" hover-class="none" bindtap="closeTagEdit">取消</button>
+        <button
+          class="btn-primary"
+          hover-class="none"
+          loading="{{tagSubmitting}}"
+          disabled="{{tagSubmitting}}"
+          bindtap="onTagSubmit"
+        >保存</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 弹层⑤：配图编辑（AI 生成 / 上传，MVP 无裁剪） ============ -->
+  <view wx:if="{{picVisible}}" class="wd-mask" catchtap="closePicEdit">
+    <view class="wd-sheet" catchtap="noop">
+      <view class="wd-sheet__header">
+        <text class="wd-sheet__title">编辑配图</text>
+        <view class="wd-sheet__close" bindtap="closePicEdit">✕</view>
+      </view>
+      <view wx:if="{{picTitle}}" class="wd-sheet__word">{{picTitle}}</view>
+      <view class="wd-sheet__body">
+        <!-- 预览 -->
+        <view class="wd-pic-preview">
+          <image
+            wx:if="{{picPreviewUrl}}"
+            class="wd-pic-preview__img"
+            src="{{picPreviewUrl}}"
+            mode="aspectFill"
+          />
+          <view wx:else class="wd-pic-preview__empty">
+            <view class="wd-pic-preview__emoji">🖼️</view>
+            <text class="wd-pic-preview__tip">暂无配图，AI 生成或上传一张</text>
+          </view>
+        </view>
+
+        <!-- 来源操作 -->
+        <view class="wd-pic-sources">
+          <button
+            class="btn-ghost wd-pic-src"
+            hover-class="none"
+            loading="{{picGenerating}}"
+            disabled="{{picGenerating || picUploading || picApplying}}"
+            bindtap="onPicGenerate"
+          >🤖 AI 生成</button>
+          <button
+            class="btn-ghost wd-pic-src"
+            hover-class="none"
+            loading="{{picUploading}}"
+            disabled="{{picGenerating || picUploading || picApplying}}"
+            bindtap="onPicUpload"
+          >📤 上传图片</button>
+        </view>
+        <view
+          wx:if="{{picPendingPath}}"
+          class="wd-pic-restore"
+          bindtap="onPicRestore"
+        >↩️ 恢复原图</view>
+      </view>
+      <view class="wd-sheet__actions">
+        <button class="btn-ghost" hover-class="none" bindtap="closePicEdit">取消</button>
+        <button
+          class="btn-primary {{!picPendingPath ? 'wd-btn--disabled' : ''}}"
+          hover-class="none"
+          loading="{{picApplying}}"
+          disabled="{{!picPendingPath || picApplying}}"
+          bindtap="onPicApply"
+        >应用</button>
+      </view>
+    </view>
+  </view>
+
+</view>

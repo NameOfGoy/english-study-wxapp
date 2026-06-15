@@ -1,0 +1,69 @@
+<view class="page page--tab">
+
+  <!-- 顶部问候 + 火苗连续打卡 -->
+  <view class="row row--between home-greet">
+    <view class="col">
+      <text class="muted">今天也要加油哦</text>
+      <view class="row gap-12 home-greet__title">
+        <text class="h1">{{home.greetingName}}</text>
+        <text class="home-greet__hi">{{home.greetingHi}}</text>
+      </view>
+    </view>
+    <view wx:if="{{home.showStreak}}" class="streak">
+      <text class="streak__icon">🔥</text>
+      <text>连续 {{home.streakDays}} 天</text>
+    </view>
+  </view>
+
+  <!-- 今日进度卡：环形进度 + 文案 -->
+  <view class="card home-today">
+    <view class="row gap-24">
+      <view class="progress-ring" style="--p:{{home.todayPercent}}">
+        <view class="progress-ring__inner">
+          <text class="progress-ring__pct">{{home.todayPercent}}%</text>
+          <text class="progress-ring__label">{{home.todayDone}}/{{home.todayTotal}}</text>
+        </view>
+      </view>
+      <view class="col flex-1 home-today__text">
+        <text class="section-title home-today__title">📊 今日进度</text>
+        <text class="text-2 home-today__sub">已完成 {{home.todayDone}} 个，还差 {{home.todayLeft}} 个达成今日目标</text>
+        <text class="text-3 home-today__tip">坚持就是胜利，继续保持节奏 ✨</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 四个模式入口卡 2x2 -->
+  <view class="section-title">🚀 快速开始</view>
+  <view class="mode-grid">
+    <view
+      wx:for="{{modes}}"
+      wx:key="key"
+      class="mode-card mode-grid__item"
+      style="--mode:{{item.colorVar}}"
+      data-path="{{item.path}}"
+      bindtap="goMode"
+    >
+      <view class="row--between mode-grid__head">
+        <view class="mode-card__icon">{{item.emoji}}</view>
+        <text class="mode-card__count">{{item.count}} 词</text>
+      </view>
+      <text class="mode-card__title mode-grid__title">{{item.name}}</text>
+      <text class="mode-card__desc mode-grid__desc">{{item.desc}}</text>
+    </view>
+  </view>
+
+  <!-- 今日完成小统计 -->
+  <view class="section-title">📈 今日完成</view>
+  <view class="card">
+    <view class="row">
+      <block wx:for="{{home.todayStats}}" wx:key="label">
+        <view wx:if="{{index !== 0}}" class="stat__divider"></view>
+        <view class="stat">
+          <text class="stat__num stat__num--primary">{{item.value}}</text>
+          <text class="stat__label">{{item.emoji}} {{item.label}}</text>
+        </view>
+      </block>
+    </view>
+  </view>
+
+</view>

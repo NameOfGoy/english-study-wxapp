@@ -1,0 +1,73 @@
+<!-- components/article-renderer —— 文章双语高亮 + 底部释义弹卡（即时结果 / 详情共用） -->
+<view class="ar {{showArchive ? 'ar--has-archive' : ''}}">
+
+  <!-- 头部：标题 + 标签 -->
+  <view class="ar-header">
+    <view class="ar-title-en">{{article.title_en}}</view>
+    <view wx:if="{{titleZh}}" class="ar-title-zh">{{titleZh}}</view>
+    <view wx:if="{{hasTags}}" class="ar-tags">
+      <text
+        wx:for="{{article.tags}}"
+        wx:key="tag_id"
+        class="ar-tag"
+        style="background: {{item.style || '#1989fa'}}"
+      >{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 双语正文：英文(含高亮可点) 上, 中文整句 下 -->
+  <view class="ar-body">
+    <view wx:for="{{sentenceSegs}}" wx:key="id" wx:for-item="s" class="ar-sentence">
+      <view class="ar-en">
+        <text
+          wx:for="{{s.segs}}"
+          wx:key="id"
+          wx:for-item="seg"
+          class="{{seg.hl ? 'ar-hl' : ''}}"
+          data-word="{{seg.word}}"
+          data-type="{{seg.type}}"
+          bindtap="onTapWord"
+        >{{seg.text}}</text>
+      </view>
+      <view wx:if="{{s.zh}}" class="ar-zh">{{s.zh}}</view>
+    </view>
+  </view>
+
+  <!-- 收录 + 返回（仅即时文章） -->
+  <view wx:if="{{showArchive}}" class="ar-archive-bar">
+    <button class="ar-btn ar-btn--ghost" hover-class="none" bindtap="onHome">返回练习</button>
+    <button
+      class="ar-btn ar-btn--primary {{archived ? 'ar-btn--done' : ''}}"
+      hover-class="none"
+      loading="{{archiving}}"
+      disabled="{{archived || archiving}}"
+      bindtap="onArchive"
+    >{{archived ? '已收录' : '收录这篇文章'}}</button>
+  </view>
+
+  <!-- 底部释义弹卡 -->
+  <view wx:if="{{bubbleVisible}}" class="ar-mask" catchtap="closeBubble">
+    <view class="ar-bubble" catchtap="noop">
+      <view class="ar-bubble__head">
+        <text class="ar-bubble__word">{{bubbleWord}}</text>
+        <view class="ar-bubble__close" bindtap="closeBubble">✕</view>
+      </view>
+      <view class="ar-bubble__body">
+        <block wx:if="{{bubbleHasSenses}}">
+          <view wx:for="{{bubbleSenses}}" wx:key="index" class="ar-sense">
+            <text wx:if="{{item.pos_label}}" class="ar-sense__pos">{{item.pos_label}}</text>
+            <text class="ar-sense__val">{{item.meaning}}</text>
+          </view>
+        </block>
+        <view wx:else class="ar-sense">
+          <text class="ar-sense__val">{{bubbleFallback}}</text>
+        </view>
+        <view class="ar-phon">
+          <text class="ar-phon__label">音标</text>
+          <text class="ar-phon__val">{{bubblePhonetic}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+</view>

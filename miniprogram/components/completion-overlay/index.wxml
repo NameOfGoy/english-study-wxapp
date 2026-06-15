@@ -1,0 +1,40 @@
+<!-- components/completion-overlay/index.wxml —— 完成 / 空态全屏蒙层 -->
+<view wx:if="{{ visible }}" class="co" catchtap="noop">
+
+  <!-- 简化撒花：仅完成态显示 -->
+  <view wx:if="{{ isCompleted }}" class="co__confetti">
+    <view
+      wx:for="{{ confetti }}"
+      wx:key="index"
+      class="co__piece"
+      style="left:{{ item.left }}%;animation-delay:{{ item.delay }}s;background:{{ item.color }};"
+    ></view>
+  </view>
+
+  <view class="co__card">
+
+    <!-- 图标：完成态奖杯 / 空态信息圈 -->
+    <view class="co__icon {{ isCompleted ? 'co__icon--win' : 'co__icon--empty' }}">
+      <text>{{ isCompleted ? '🏆' : 'ℹ️' }}</text>
+    </view>
+
+    <!-- 标题 + 副标题 -->
+    <view class="co__title">{{ isCompleted ? '本次练习完成！' : '当前已没有需要练习的单词' }}</view>
+    <view class="co__sub">
+      {{ isCompleted ? ('恭喜你，坚持完成了本次' + modeLabel) : (emptyText || (modeLabel + '列表为空，可稍后再来或切换模式')) }}
+    </view>
+
+    <!-- 统计行 -->
+    <view wx:if="{{ isCompleted }}" class="co__stats">
+      本次共{{ modeLabel }} <text class="co__num">{{ count }}</text> 个
+    </view>
+    <view wx:else class="co__stats">当前{{ modeLabel }}列表为空</view>
+
+    <!-- 操作按钮 -->
+    <view class="co__actions">
+      <button class="btn-primary" hover-class="none" bindtap="onRestart" wx:if="{{ isCompleted }}">再来一组</button>
+      <button class="btn-ghost" hover-class="none" bindtap="onHome">返回练习主页</button>
+    </view>
+
+  </view>
+</view>

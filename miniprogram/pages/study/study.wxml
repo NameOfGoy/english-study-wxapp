@@ -1,0 +1,108 @@
+<!-- 学习模式：单张大学习卡，纯展示 -->
+<view class="page">
+
+  <!-- 顶部：模式标识 + 进度 -->
+  <view class="row row--between study-head">
+    <view class="row gap-12">
+      <text class="study-head__emoji">📘</text>
+      <text class="study-head__title">学习</text>
+    </view>
+    <view class="pill pill--active" wx:if="{{progressTotal > 0}}">{{progressCurrent}} / {{progressTotal}}</view>
+  </view>
+
+  <!-- 顶部进度条 -->
+  <view class="study-bar">
+    <view class="study-bar__fill" style="width: {{barPercent}}%"></view>
+  </view>
+
+  <!-- 加载态 -->
+  <view wx:if="{{loading}}" class="word-card study-card study-empty">
+    <view class="placeholder-img" style="--mode: {{modeVar}}">⏳</view>
+    <text class="study-empty__text">正在加载学习卡…</text>
+  </view>
+
+  <!-- 学习卡 -->
+  <view wx:elif="{{word}}" class="word-card study-card">
+    <!-- 配图：有图走 <image>（失败回退占位）；无图/失败用 emoji 占位块 -->
+    <image
+      wx:if="{{word.pictureUrl && !picError}}"
+      class="placeholder-img"
+      src="{{word.pictureUrl}}"
+      mode="aspectFill"
+      binderror="onPicError"
+    ></image>
+    <view wx:else class="placeholder-img" style="--mode: {{modeVar}}">{{emoji}}</view>
+
+    <!-- 单词大字 -->
+    <text class="word-card__word">{{word.word}}</text>
+
+    <!-- 美/英音标，各带发音按钮（短语无美式音标行） -->
+    <view class="study-phon col gap-16">
+      <view wx:if="{{!word.isPhrase && word.phoneticUS}}" class="row row--center gap-16">
+        <text class="study-phon__label">美</text>
+        <text class="word-card__phonetic study-phon__txt">{{word.phoneticUS}}</text>
+        <view class="btn-sound" bindtap="onPlay" data-type="us">🔊</view>
+      </view>
+      <view wx:if="{{word.phoneticUK}}" class="row row--center gap-16">
+        <text class="study-phon__label">{{word.isPhrase ? '🔊' : '英'}}</text>
+        <text class="word-card__phonetic study-phon__txt">{{word.phoneticUK}}</text>
+        <view class="btn-sound" bindtap="onPlay" data-type="uk">🔊</view>
+      </view>
+    </view>
+
+    <!-- 中文释义（按 \n 分行展示） -->
+    <view class="study-meaning">
+      <text
+        wx:for="{{word.meaningLines}}"
+        wx:key="index"
+        class="word-card__meaning"
+      >{{item}}</text>
+    </view>
+
+    <!-- 例句轮播 -->
+    <view wx:if="{{word.examples.length > 0}}" class="study-ex">
+      <view class="row row--between study-ex__head">
+        <text class="study-ex__title">例句</text>
+        <text class="study-ex__count">{{exIndex + 1}} / {{word.examples.length}}</text>
+      </view>
+      <swiper
+        class="study-swiper"
+        current="{{exIndex}}"
+        bindchange="onExChange"
+        circular="{{true}}"
+        next-margin="24rpx"
+      >
+        <swiper-item wx:for="{{word.examples}}" wx:key="index">
+          <view class="study-ex__item">
+            <text class="study-ex__en">{{item.en}}</text>
+            <text wx:if="{{item.zh}}" class="study-ex__zh">{{item.zh}}</text>
+          </view>
+        </swiper-item>
+      </swiper>
+      <!-- 轮播指示点 -->
+      <view class="row row--center gap-12 study-dots">
+        <view
+          wx:for="{{word.examples}}"
+          wx:key="index"
+          class="study-dot {{index === exIndex ? 'study-dot--active' : ''}}"
+        ></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部完成按钮（仅有当前卡时显示） -->
+  <view wx:if="{{word && !showOverlay && !loading}}" class="study-foot">
+    <button class="btn-primary" bindtap="onDone" loading="{{submitting}}" disabled="{{submitting}}">完成学习</button>
+  </view>
+
+  <!-- 完成 / 空态全屏蒙层（count=0 空态 / >0 完成态） -->
+  <completion-overlay
+    visible="{{showOverlay}}"
+    mode="study"
+    count="{{finishedCount}}"
+    empty-text="今天没有要学的新词啦"
+    bind:restart="onRestart"
+    bind:home="onHome"
+  />
+
+</view>

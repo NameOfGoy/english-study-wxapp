@@ -1,0 +1,33 @@
+syntax = "v1"
+
+info (
+	title:   "english-study-api"
+	desc:    "英文学习平台api"
+	author:  "junnie"
+	version: "v1"
+)
+
+import "user.api"
+
+type (
+	PathIDReq {
+		PathID string `path:"id"` // 路径 ID
+	}
+	CommonReply {
+		Code   int32  `json:"code"` // 状态码
+		Msg    string `json:"message"` // 错误信息
+		Reason string `json:"reason,optional"` // 错误原因
+	}
+	PageReq {
+		Offset  int    `form:"offset,default=0"`
+		Limit   int    `form:"limit,default=10"`
+		OrderBy string `form:"orderby,optional"`
+		Sort    string `form:"sort,default=asc"`
+	}
+	PageReply {
+		Offset     int   `json:"offset,optional"`
+		Limit      int   `json:"limit,optional"`
+		TotalCount int64 `json:"total_count"`
+	}
+)
+

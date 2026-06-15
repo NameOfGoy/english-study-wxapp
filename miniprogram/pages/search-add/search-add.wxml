@@ -1,0 +1,93 @@
+<!-- pages/search-add/search-add.wxml —— 中文搜索批量添加（普通页）
+     复刻 H5 SearchAddModal.vue：防抖搜索 → 结果多选 →「批量添加 (N)」异步入库。
+     状态分支顺序对照 H5：未输入提示 → 搜索中 → 无结果 → 列表。
+     无 vant：复选框/标签/底部固定栏自绘；蓝色活力风复用 app.wxss 全局类。 -->
+<view class="page sa {{selectableCount > 0 ? 'sa--padded' : ''}}">
+
+  <!-- 搜索框（吸顶） -->
+  <view class="sa-search">
+    <view class="search-bar">
+      <text class="sa-search__icon">🔍</text>
+      <input
+        class="search-bar__input"
+        placeholder="输入中文，如：短暂、放弃..."
+        placeholder-class="sa-ph"
+        confirm-type="search"
+        value="{{keyword}}"
+        bindinput="onKeywordInput"
+        bindconfirm="onSearchConfirm"
+      />
+      <view wx:if="{{keyword}}" class="sa-search__clear" catchtap="onClear">✕</view>
+    </view>
+  </view>
+
+  <!-- 未输入：空态提示 -->
+  <view wx:if="{{!keyword && results.length === 0}}" class="sa-state">
+    <view class="sa-state__emoji">🔍</view>
+    <text class="sa-state__text">输入中文释义关键词搜索词库</text>
+    <text class="sa-state__sub">例如：搜索“短暂”找到 ephemeral、transient 等</text>
+  </view>
+
+  <!-- 搜索中 -->
+  <view wx:elif="{{searching}}" class="sa-state">
+    <view class="sa-state__emoji">⏳</view>
+    <text class="sa-state__text">搜索中...</text>
+  </view>
+
+  <!-- 无结果 -->
+  <view wx:elif="{{keyword && results.length === 0}}" class="sa-state">
+    <view class="sa-state__emoji">🤔</view>
+    <text class="sa-state__text">未找到相关词汇</text>
+  </view>
+
+  <!-- 结果列表 -->
+  <block wx:else>
+    <!-- 工具条：结果计数 + 全选可添加 -->
+    <view class="sa-toolbar">
+      <text class="sa-toolbar__count">共 {{results.length}} 条结果</text>
+      <view wx:if="{{selectableCount > 0}}" class="sa-toolbar__all" bindtap="onToggleAll">
+        <view class="sa-check {{allSelected ? 'sa-check--on' : ''}}">{{allSelected ? '✓' : ''}}</view>
+        <text>全选可添加</text>
+      </view>
+    </view>
+
+    <view class="card sa-list">
+      <view
+        class="sa-item {{item.is_added ? 'sa-item--added' : ''}}"
+        wx:for="{{results}}"
+        wx:key="sw"
+        data-index="{{index}}"
+        bindtap="onToggleItem"
+      >
+        <!-- 可选项：自绘复选框；已添加项：隐藏占位保持对齐 -->
+        <view
+          wx:if="{{!item.is_added}}"
+          class="sa-check {{item.selected ? 'sa-check--on' : ''}}"
+        >{{item.selected ? '✓' : ''}}</view>
+        <view wx:else class="sa-check sa-check--ghost"></view>
+
+        <view class="sa-item__info">
+          <view class="sa-item__top">
+            <text class="sa-item__sw">{{item.sw}}</text>
+            <text wx:if="{{item.word_type === 2}}" class="sa-tag sa-tag--phrase">短语</text>
+            <text wx:if="{{item.is_added}}" class="sa-tag sa-tag--added">已添加</text>
+          </view>
+          <text wx:if="{{item.phonetic}}" class="sa-item__phonetic">{{item.phonetic}}</text>
+          <text class="sa-item__trans">{{item.translation}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 底部固定操作栏（有可选项才显示，对照 H5 v-if="selectableCount > 0"） -->
+  <view wx:if="{{selectableCount > 0}}" class="sa-bottom">
+    <button
+      class="btn-primary {{selectedCount === 0 ? 'sa-submit--disabled' : ''}}"
+      hover-class="none"
+      loading="{{submitting}}"
+      disabled="{{selectedCount === 0 || submitting}}"
+      bindtap="onSubmit"
+    >{{submitLabel}}</button>
+  </view>
+
+</view>

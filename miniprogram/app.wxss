@@ -1,0 +1,397 @@
+/**app.wxss —— 全局设计系统（活力游戏化风格）**/
+
+/* ============ CSS 变量：所有页面严格复用，挂在 page{} 上 ============ */
+page {
+  /* 主色 / 渐变 */
+  --primary: #3DA5F4;
+  --primary-2: #5BC8EA;
+  --primary-grad: linear-gradient(135deg, #3DA5F4, #5BC8EA);
+
+  /* 点缀 / 火苗 */
+  --accent: #22B8D6;
+  --streak: #FF6B35;
+
+  /* 背景 / 卡片 / 分割线 */
+  --bg: #F2F6FC;
+  --card: #FFFFFF;
+  --line: #EEF1F5;
+
+  /* 文字 */
+  --text: #1F2937;
+  --text-2: #6B7280;
+  --text-3: #9AA3AF;
+
+  /* 四个练习模式主题色 */
+  --mode-study: #3DA5F4;
+  --mode-review: #6C7BF0;
+  --mode-strength: #16C0CB;
+  --mode-spot: #9B6DFF;
+
+  /* 状态色 */
+  --success: #22C55E;
+  --warning: #FFB020;
+  --danger: #FF5A5F;
+
+  /* 圆角 / 阴影 */
+  --r-card: 24rpx;
+  --r-pill: 999rpx;
+  --r-inner: 16rpx;
+  --shadow: 0 8rpx 24rpx rgba(20, 30, 50, 0.06);
+  --shadow-lg: 0 12rpx 32rpx rgba(20, 30, 50, 0.1);
+
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+}
+
+/* ============ 页面容器 ============ */
+.page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 24rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+/* tab 页底部留出自定义 tabBar 高度(110rpx+安全区)+ 舒适余量，避免最后一块内容贴住/被导航栏挡住 */
+.page--tab {
+  padding-bottom: calc(180rpx + env(safe-area-inset-bottom));
+}
+
+/* ============ 白卡 ============ */
+.card {
+  background: var(--card);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow);
+  padding: 32rpx;
+  box-sizing: border-box;
+}
+.card + .card {
+  margin-top: 24rpx;
+}
+
+/* ============ 区块标题 ============ */
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text);
+  margin: 32rpx 4rpx 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+.section-title:first-child {
+  margin-top: 8rpx;
+}
+
+/* ============ 大标题 / 正文文字工具类 ============ */
+.h1 {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: var(--text);
+}
+.text-2 { color: var(--text-2); }
+.text-3 { color: var(--text-3); }
+.muted  { color: var(--text-2); font-size: 24rpx; }
+
+/* ============ 主色渐变大按钮 ============ */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 96rpx;
+  border-radius: var(--r-pill);
+  background: var(--primary-grad);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  box-shadow: 0 10rpx 24rpx rgba(61, 165, 244, 0.32);
+  border: none;
+  box-sizing: border-box;
+}
+.btn-primary::after { border: none; }
+.btn-primary:active { opacity: 0.88; transform: translateY(2rpx); }
+
+/* ============ 幽灵按钮（描边） ============ */
+.btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 96rpx;
+  border-radius: var(--r-pill);
+  background: #fff;
+  color: var(--text);
+  font-size: 32rpx;
+  font-weight: 600;
+  border: 2rpx solid var(--line);
+  box-sizing: border-box;
+}
+.btn-ghost::after { border: none; }
+.btn-ghost:active { background: #F2F4F7; }
+
+/* ============ 胶囊标签 ============ */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 60rpx;
+  padding: 0 28rpx;
+  border-radius: var(--r-pill);
+  background: #F2F4F7;
+  color: var(--text-2);
+  font-size: 26rpx;
+  line-height: 1;
+}
+.pill--active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6rpx 16rpx rgba(61, 165, 244, 0.28);
+}
+
+/* ============ 状态小标签 ============ */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  height: 40rpx;
+  padding: 0 16rpx;
+  border-radius: var(--r-pill);
+  font-size: 22rpx;
+  line-height: 1;
+  font-weight: 500;
+}
+.badge-status--new       { background: rgba(61,165,244,.12); color: var(--mode-study); }
+.badge-status--learning  { background: rgba(108,123,240,.12); color: var(--mode-review); }
+.badge-status--strength  { background: rgba(22,192,203,.12); color: var(--mode-strength); }
+.badge-status--mastered  { background: rgba(34,197,94,.14);  color: var(--success); }
+.badge-status--unknown   { background: rgba(255,90,95,.12);  color: var(--danger); }
+
+/* ============ 火苗连续打卡条 ============ */
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  height: 56rpx;
+  padding: 0 22rpx;
+  border-radius: var(--r-pill);
+  background: rgba(255, 107, 53, 0.12);
+  color: var(--streak);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+.streak__icon { font-size: 30rpx; }
+
+/* ============ 环形进度（conic-gradient 实现，中心显示百分比） ============ */
+/* 用法：<view class="progress-ring" style="--p:68"> 内部放 .progress-ring__inner */
+.progress-ring {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 50%;
+  background:
+    conic-gradient(var(--primary) calc(var(--p, 0) * 1%), #E5F0FC 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.progress-ring__inner {
+  position: absolute;
+  width: 152rpx;
+  height: 152rpx;
+  border-radius: 50%;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.progress-ring__pct {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: var(--text);
+  line-height: 1;
+}
+.progress-ring__label {
+  font-size: 22rpx;
+  color: var(--text-3);
+  margin-top: 6rpx;
+}
+
+/* ============ 模式入口卡（可带模式色，用 --mode 注入主题色） ============ */
+/* 用法：<view class="mode-card" style="--mode:var(--mode-review)"> */
+.mode-card {
+  position: relative;
+  background: var(--card);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow);
+  padding: 28rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.mode-card::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 8rpx;
+  background: var(--mode, var(--primary));
+}
+.mode-card:active { transform: translateY(2rpx); box-shadow: var(--shadow-lg); }
+.mode-card__icon {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: var(--r-inner);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 46rpx;
+  background: var(--mode, var(--primary));
+  color: #fff;
+}
+.mode-card__title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.mode-card__count {
+  color: var(--mode, var(--primary));
+  font-weight: 600;
+}
+.mode-card__desc {
+  font-size: 24rpx;
+  color: var(--text-2);
+}
+
+/* ============ 数字统计块 ============ */
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+.stat__num {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: var(--text);
+  line-height: 1.1;
+}
+.stat__num--primary { color: var(--primary); }
+.stat__label {
+  font-size: 24rpx;
+  color: var(--text-2);
+  margin-top: 8rpx;
+}
+.stat__divider {
+  width: 2rpx;
+  height: 56rpx;
+  background: var(--line);
+  align-self: center;
+}
+
+/* ============ 学习卡外壳 ============ */
+.word-card {
+  background: var(--card);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow);
+  padding: 40rpx 36rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.word-card__word {
+  font-size: 56rpx;
+  font-weight: bold;
+  color: var(--text);
+  margin-top: 12rpx;
+}
+.word-card__phonetic {
+  font-size: 26rpx;
+  color: var(--text-2);
+  margin-top: 12rpx;
+}
+.word-card__meaning {
+  font-size: 32rpx;
+  color: var(--text);
+  margin-top: 20rpx;
+  text-align: center;
+}
+
+/* ============ 模式色渐变占位块（居中放大 emoji，替代外链图片） ============ */
+/* 用法：<view class="placeholder-img" style="--mode:var(--mode-strength)">💪</view> */
+.placeholder-img {
+  width: 100%;
+  height: 280rpx;
+  border-radius: var(--r-inner);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 120rpx;
+  color: #fff;
+  background: linear-gradient(135deg, var(--mode, var(--primary)), rgba(255, 255, 255, 0.25));
+  background-color: var(--mode, var(--primary));
+  box-shadow: inset 0 0 60rpx rgba(0, 0, 0, 0.08);
+}
+.placeholder-img--sm { height: 200rpx; font-size: 96rpx; }
+
+/* ============ 发音按钮（小圆/胶囊） ============ */
+.btn-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  height: 64rpx;
+  padding: 0 28rpx;
+  border-radius: var(--r-pill);
+  background: rgba(61, 165, 244, 0.1);
+  color: var(--primary);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+.btn-sound:active { background: rgba(61, 165, 244, 0.2); }
+
+/* ============ 通用横向布局工具 ============ */
+.row { display: flex; align-items: center; }
+.row--between { justify-content: space-between; }
+.row--center { justify-content: center; }
+.col { display: flex; flex-direction: column; }
+.gap-12 { gap: 12rpx; }
+.gap-16 { gap: 16rpx; }
+.gap-20 { gap: 20rpx; }
+.gap-24 { gap: 24rpx; }
+.flex-1 { flex: 1; }
+
+/* ============ 列表项（设置项 / 词条项 通用范式） ============ */
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 28rpx 0;
+}
+.list-item + .list-item { border-top: 2rpx solid var(--line); }
+.list-item__icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: var(--r-inner);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+  background: #F2F4F7;
+}
+.list-item__arrow { color: var(--text-3); font-size: 30rpx; }
+
+/* ============ 搜索框外观 ============ */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  height: 80rpx;
+  padding: 0 28rpx;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.search-bar__input {
+  flex: 1;
+  font-size: 28rpx;
+  color: var(--text);
+}

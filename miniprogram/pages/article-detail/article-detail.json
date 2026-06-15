@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "article-renderer": "/components/article-renderer/index"
+  },
+  "navigationBarTitleText": "文章详情"
+}

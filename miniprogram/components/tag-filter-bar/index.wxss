@@ -1,0 +1,131 @@
+/* components/tag-filter-bar/index.wxss —— 蓝色活力风，复用 app.wxss 的 CSS 变量 */
+/* addGlobalClass:true 已开启，可直接用 page{} 上挂的 --primary/--card/--line 等变量 */
+
+.tfb {
+  background: var(--card, #fff);
+  border-radius: var(--r-card, 24rpx);
+  box-shadow: var(--shadow, 0 8rpx 24rpx rgba(20, 30, 50, 0.06));
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ---- 折叠头 ---- */
+.tfb__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 28rpx;
+}
+.tfb__header:active {
+  background: rgba(61, 165, 244, 0.04);
+}
+.tfb__summary {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+  flex: 1;
+}
+.tfb__icon {
+  font-size: 30rpx;
+}
+.tfb__title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text, #1f2937);
+  flex-shrink: 0;
+}
+.tfb__summary-text {
+  font-size: 26rpx;
+  color: var(--text-2, #6b7280);
+  margin-left: 8rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tfb__caret {
+  font-size: 22rpx;
+  color: var(--primary, #3da5f4);
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+
+/* ---- 展开体 ---- */
+.tfb__body {
+  padding: 8rpx 28rpx 28rpx;
+  border-top: 2rpx solid var(--line, #eef1f5);
+}
+.tfb__loading {
+  text-align: center;
+  color: var(--text-3, #9aa3af);
+  font-size: 26rpx;
+  padding: 28rpx 0;
+}
+
+/* 「全部」行 */
+.tfb__all {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 18rpx 0;
+  color: var(--text-2, #6b7280);
+  font-size: 26rpx;
+  border-bottom: 2rpx dashed var(--line, #eef1f5);
+  margin-bottom: 16rpx;
+}
+.tfb__all-mark {
+  font-size: 26rpx;
+  color: var(--text-3, #9aa3af);
+}
+.tfb__all--active {
+  color: var(--primary, #3da5f4);
+  font-weight: 600;
+}
+.tfb__all--active .tfb__all-mark {
+  color: var(--primary, #3da5f4);
+}
+
+/* chip 网格 */
+.tfb__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+.tfb__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 24rpx;
+  border-radius: var(--r-pill, 999rpx);
+  background: #f2f4f7;
+  color: var(--text-2, #6b7280);
+  font-size: 24rpx;
+  line-height: 1;
+  border: 2rpx solid transparent;
+  box-sizing: border-box;
+  transition: background 0.15s;
+}
+/* 选中态：背景色由内联 style 注入（标签 style 或回退主色），文字转白 */
+.tfb__chip--active {
+  color: #fff;
+  font-weight: 600;
+}
+/* 系统标签：虚线边框（与选中态边框色叠加时以选中为准，已由内联 border-color 覆盖） */
+.tfb__chip--system {
+  border-style: dashed;
+  border-color: var(--warning, #ffb020);
+}
+.tfb__chip-name {
+  white-space: nowrap;
+}
+.tfb__chip-lock {
+  font-size: 20rpx;
+}
+
+/* 空态 */
+.tfb__empty {
+  text-align: center;
+  color: var(--text-3, #9aa3af);
+  font-size: 26rpx;
+  padding: 24rpx 0;
+}

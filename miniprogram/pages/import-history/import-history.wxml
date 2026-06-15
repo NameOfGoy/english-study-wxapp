@@ -1,0 +1,91 @@
+<!-- pages/import-history/import-history.wxml —— 导入任务历史（普通页）
+     复刻 H5 ImportTaskHistory.vue + ImportTaskList.vue：时间筛选 + 任务卡（进度/统计/失败词）+ 3s 轮询。 -->
+<view class="page ih">
+
+  <!-- ============ 时间筛选 ============ -->
+  <view class="ih-filter">
+    <view class="ih-quick">
+      <view
+        wx:for="{{quickRanges}}"
+        wx:key="days"
+        class="ih-quick__tab {{activeDays === item.days && !customMode ? 'ih-quick__tab--on' : ''}}"
+        data-days="{{item.days}}"
+        bindtap="onQuickRange"
+      >{{item.label}}</view>
+      <view
+        class="ih-quick__tab {{customMode ? 'ih-quick__tab--on' : ''}}"
+        bindtap="onCustomMode"
+      >自定义</view>
+    </view>
+
+    <view wx:if="{{customMode}}" class="ih-custom">
+      <text class="ih-custom__label">起</text>
+      <picker mode="date" value="{{startDate}}" end="{{maxDate}}" bindchange="onStartDate">
+        <view class="ih-custom__value">{{startDate || '请选择'}}</view>
+      </picker>
+      <text class="ih-custom__label">止</text>
+      <picker mode="date" value="{{endDate}}" end="{{maxDate}}" bindchange="onEndDate">
+        <view class="ih-custom__value">{{endDate || '请选择'}}</view>
+      </picker>
+      <view class="ih-custom__apply" bindtap="applyCustom">应用</view>
+    </view>
+  </view>
+
+  <!-- ============ 列表 ============ -->
+  <view class="ih-content">
+    <!-- 加载态 -->
+    <view wx:if="{{loading}}" class="ih-loading">加载中…</view>
+
+    <!-- 空态 -->
+    <view wx:elif="{{empty}}" class="ih-empty">
+      <view class="ih-empty__emoji">📭</view>
+      <text class="ih-empty__text">该时段暂无导入任务</text>
+    </view>
+
+    <!-- 任务卡 -->
+    <view wx:else class="ih-cards">
+      <view
+        wx:for="{{tasks}}"
+        wx:key="id"
+        class="ih-card ih-card--{{item.statusClass}}"
+      >
+        <view class="ih-card__head">
+          <text class="ih-card__name">{{item.fileName}}</text>
+          <text class="ih-card__status ih-card__status--{{item.statusClass}}">{{item.statusText}}</text>
+        </view>
+
+        <!-- 进行中：进度条 -->
+        <view wx:if="{{item.isRunning}}" class="ih-progress">
+          <view class="ih-progress__info">
+            <text>{{item.current}} / {{item.total}}</text>
+            <text wx:if="{{item.currentWord}}" class="ih-progress__word">{{item.currentWord}}</text>
+          </view>
+          <view class="ih-progress__track">
+            <view class="ih-progress__bar" style="width: {{item.percent}}%;"></view>
+          </view>
+        </view>
+
+        <!-- 统计 -->
+        <view class="ih-stats">
+          <text wx:if="{{item.showSuccess}}" class="ih-stat ih-stat--ok">成功 {{item.successCount}}</text>
+          <text wx:if="{{item.showFail}}" class="ih-stat ih-stat--fail">失败 {{item.failCount}}</text>
+          <text class="ih-stat ih-stat--total">共 {{item.total}} 个</text>
+        </view>
+
+        <!-- 失败词（可展开） -->
+        <view wx:if="{{item.showFailSection}}" class="ih-fail">
+          <view class="ih-fail__toggle" data-id="{{item.id}}" bindtap="onToggleFail">
+            <text>失败词列表</text>
+            <text class="ih-fail__arrow">{{item.failExpanded ? '▲' : '▼'}}</text>
+          </view>
+          <view wx:if="{{item.failExpanded}}" class="ih-fail__words">
+            <text wx:for="{{item.failWords}}" wx:for-item="fw" wx:key="*this" class="ih-fail__word">{{fw}}</text>
+          </view>
+        </view>
+
+        <text class="ih-card__time">{{item.createdAt}}</text>
+      </view>
+    </view>
+  </view>
+
+</view>

@@ -1,0 +1,304 @@
+<!-- pages/wordbook/wordbook.wxml —— 词库（tab 页 selected:2）
+     严格对照 H5 Dictionary.vue：搜索 + 词/短语胶囊 + 三视图（单词/状态/标签，都先显示全部词）。
+     三视图共用同一套「字母分组列表 + 右侧 A-Z 字母条」：
+       单词视图 → 点词条跳详情页；
+       状态视图 → 每条带状态角标(status>0 排前)，点词条开「状态编辑层」；
+       标签视图 → 每条挂标签 chip(无则"暂无标签")，点词条开「标签编辑层」，顶部可折叠「按标签筛选」面板。
+     「+」浮动按钮 → wx.showActionSheet 五项菜单。弹层自绘 fixed 蒙层，蓝色活力风复用 app.wxss。 -->
+<view class="page page--tab wb">
+
+  <!-- 顶部搜索框（前缀搜） -->
+  <view class="search-bar">
+    <text>🔍</text>
+    <input
+      class="search-bar__input"
+      placeholder="{{activeKind === 'phrase' ? '搜索短语' : '搜索单词'}}"
+      placeholder-class="wb-search-ph"
+      value="{{keyword}}"
+      bindinput="onSearchInput"
+    />
+  </view>
+
+  <!-- 工具栏：左 三视图切换（单词/状态/标签），右 词/短语切换 -->
+  <view class="row row--between wb-tools">
+    <view class="row gap-12">
+      <view
+        wx:for="{{views}}"
+        wx:key="key"
+        class="pill {{activeView === item.key ? 'pill--active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onSwitchView"
+      >{{item.label}}</view>
+    </view>
+    <view class="row gap-12">
+      <view
+        class="pill {{activeKind === 'word' ? 'pill--active' : ''}}"
+        data-kind="word"
+        bindtap="onSwitchKind"
+      >词</view>
+      <view
+        class="pill {{activeKind === 'phrase' ? 'pill--active' : ''}}"
+        data-kind="phrase"
+        bindtap="onSwitchKind"
+      >短语</view>
+    </view>
+  </view>
+
+  <!-- 标签视图：可折叠「按标签筛选」面板（AND；未选=显示全部） -->
+  <view wx:if="{{activeView === 'tag'}}" class="card wb-tagfilter">
+    <view class="wb-tagfilter__head" bindtap="onToggleTagPanel">
+      <view class="row gap-12">
+        <text class="wb-tagfilter__title">🏷️ 按标签筛选</text>
+        <text class="wb-tagfilter__summary">{{filterSummary}}</text>
+      </view>
+      <view class="row gap-16">
+        <text
+          wx:if="{{selectedFilterIds.length}}"
+          class="wb-tagfilter__clear"
+          catchtap="onClearFilter"
+        >清空</text>
+        <text class="wb-tagfilter__arrow">{{tagPanelOpen ? '▲' : '▼'}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{tagPanelOpen}}" class="wb-tagfilter__body">
+      <view class="wb-tagfilter__tip">勾选多个标签 = 筛选「同时拥有」这些标签的词条</view>
+      <view wx:if="{{filterOptions.length === 0}}" class="wb-tagfilter__empty">还没有可用标签</view>
+      <view wx:else class="wb-tagfilter__chips">
+        <view
+          wx:for="{{filterOptions}}"
+          wx:key="id"
+          class="wb-chip {{item.selected ? 'wb-chip--on' : ''}}"
+          style="{{item.selected ? item.style : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onToggleFilterTag"
+        >{{item.name}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 列表标题（总数；标签筛选生效时 summary 已在面板里给计数，这里仅标识 kind） -->
+  <view class="section-title">
+    📚 {{activeKind === 'phrase' ? '短语' : '单词'}}（{{total}}）
+  </view>
+
+  <!-- ============ 列表区：三视图共用「字母分组 + 右侧字母条」 ============ -->
+  <!-- 标签视图未选筛选时显示全部；选了则显示 AND 结果。状态视图组内 status 优先(JS 已排序)。 -->
+  <view class="wb-az">
+    <scroll-view
+      class="wb-az__scroll"
+      scroll-y
+      scroll-into-view="{{scrollIntoId}}"
+      scroll-with-animation
+      bindscroll="onListScroll"
+    >
+      <!-- 标签筛选中提示 -->
+      <view wx:if="{{tagFiltering}}" class="wb-foot">筛选中…</view>
+
+      <view
+        wx:for="{{letterGroups}}"
+        wx:key="letter"
+        class="wb-group"
+        id="letter-{{item.letter}}"
+      >
+        <!-- 放大字母分组头：大号加粗 + 主色竖条，可吸顶 -->
+        <view class="wb-letter">
+          <text class="wb-letter__char">{{item.letter === '#' ? '#' : item.letter}}</text>
+        </view>
+
+        <view class="card wb-list">
+          <view
+            class="wb-item {{activeView === 'tag' ? 'wb-item--tag' : ''}}"
+            wx:for="{{item.rows}}"
+            wx:for-item="row"
+            wx:key="id"
+            data-id="{{row.id}}"
+            bindtap="onTapItem"
+            hover-class="wb-item--hover"
+          >
+            <view class="wb-item__main">
+              <text class="wb-item__word">{{row.word}}</text>
+              <!-- 标签视图：词下方挂它自己的标签 chip（无则"暂无标签"） -->
+              <view wx:if="{{activeView === 'tag'}}" class="wb-item__tags">
+                <view
+                  wx:for="{{row.tags}}"
+                  wx:for-item="tg"
+                  wx:key="id"
+                  class="wb-minitag"
+                  style="background: {{tg.style}}"
+                >{{tg.name}}</view>
+                <text wx:if="{{!row.tags.length}}" class="wb-item__notags">暂无标签</text>
+              </view>
+            </view>
+            <view class="row gap-12">
+              <!-- 状态角标：仅状态视图显示（切回单词/标签视图不带，避免 _rows 里残留的 statusCls 串视图） -->
+              <view wx:if="{{activeView === 'status' && row.statusCls}}" class="badge-status {{row.statusCls}}">{{row.statusText}}</view>
+              <text class="wb-item__arrow">›</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 右侧 A-Z 快速跳转条 -->
+    <view wx:if="{{indexLetters.length > 0}}" class="wb-indexbar">
+      <view
+        wx:for="{{indexLetters}}"
+        wx:key="*this"
+        class="wb-indexbar__item {{activeLetter === item ? 'wb-indexbar__item--on' : ''}}"
+        data-letter="{{item}}"
+        bindtap="onTapLetter"
+      >{{item === '#' ? '#' : item}}</view>
+    </view>
+  </view>
+
+  <!-- ============ 空态 ============ -->
+  <view wx:if="{{empty && !loading}}" class="wb-empty">
+    <view class="wb-empty__emoji">📭</view>
+    <text class="wb-empty__text">{{emptyText}}</text>
+  </view>
+
+  <!-- ============ 「+」浮动按钮 → 操作菜单 ============ -->
+  <view class="wb-fab" bindtap="onTapFab" hover-class="wb-fab--hover">＋</view>
+
+</view>
+
+<!-- ============ 弹层①：状态编辑（对照 H5 StatusEditModal） ============ -->
+<view wx:if="{{statusVisible}}" class="wb-mask" catchtap="closeStatusEdit">
+  <view class="wb-sheet" catchtap="noop">
+    <view class="wb-sheet__header">
+      <text class="wb-sheet__title">编辑{{activeKind === 'phrase' ? '短语' : '单词'}}状态</text>
+      <view class="wb-sheet__close" bindtap="closeStatusEdit">✕</view>
+    </view>
+    <view class="wb-sheet__word">{{editWord}}</view>
+    <view class="wb-sheet__body">
+      <view
+        wx:for="{{statusOptions}}"
+        wx:key="value"
+        class="wb-status-opt {{statusValue === item.value ? 'wb-status-opt--active' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="onStatusPick"
+      >
+        <view class="wb-status-opt__radio">
+          <view wx:if="{{statusValue === item.value}}" class="wb-status-opt__dot wb-dot--{{item.dot}}"></view>
+        </view>
+        <text class="wb-status-opt__label">{{item.label}}</text>
+      </view>
+    </view>
+    <view class="wb-sheet__actions">
+      <button class="btn-ghost" hover-class="none" bindtap="closeStatusEdit">取消</button>
+      <button
+        class="btn-primary"
+        hover-class="none"
+        loading="{{statusSubmitting}}"
+        disabled="{{statusSubmitting}}"
+        bindtap="onStatusSubmit"
+      >保存</button>
+    </view>
+  </view>
+</view>
+
+<!-- ============ 弹层②：标签编辑（对照 H5 TagEditModal） ============ -->
+<view wx:if="{{tagVisible}}" class="wb-mask" catchtap="closeTagEdit">
+  <view class="wb-sheet" catchtap="noop">
+    <view class="wb-sheet__header">
+      <text class="wb-sheet__title">编辑标签</text>
+      <view class="wb-sheet__close" bindtap="closeTagEdit">✕</view>
+    </view>
+    <view class="wb-sheet__word">{{editWord}}</view>
+    <view class="wb-sheet__body">
+      <view class="wb-tag-grid">
+        <view
+          wx:for="{{tagOptions}}"
+          wx:key="id"
+          class="wb-tag-pill {{item.selected ? 'wb-tag-pill--on' : ''}}"
+          style="{{item.selected ? item.style : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onTagToggle"
+        >{{item.name}}</view>
+
+        <!-- 新建入口 -->
+        <view class="wb-tag-pill wb-tag-pill--new" bindtap="openTagCreate">＋ 新建</view>
+        <view wx:if="{{tagOptions.length === 0}}" class="wb-tag-empty">暂无可选标签，点「新建」创建</view>
+      </view>
+
+      <!-- 新建标签子表单（12 色调色板） -->
+      <view wx:if="{{tagCreateOpen}}" class="wb-create">
+        <view class="wb-create__field">
+          <text class="wb-create__label">名称</text>
+          <input
+            class="wb-create__input"
+            placeholder="不超过 20 字"
+            placeholder-class="wb-ph"
+            maxlength="20"
+            value="{{tagNewName}}"
+            bindinput="onTagNameInput"
+          />
+        </view>
+        <view class="wb-create__color">
+          <text class="wb-create__label">颜色</text>
+          <view class="wb-create__grid">
+            <view
+              wx:for="{{tagPalette}}"
+              wx:key="*this"
+              class="wb-dot-color {{tagNewColor === item ? 'wb-dot-color--active' : ''}}"
+              style="background: {{item}}"
+              data-color="{{item}}"
+              bindtap="onTagColorPick"
+            ></view>
+          </view>
+        </view>
+        <view class="wb-create__actions">
+          <button class="btn-ghost wb-create__btn" hover-class="none" bindtap="cancelTagCreate">取消</button>
+          <button
+            class="btn-primary wb-create__btn {{!tagNewNameTrimmed ? 'wb-btn--disabled' : ''}}"
+            hover-class="none"
+            loading="{{tagCreating}}"
+            disabled="{{!tagNewNameTrimmed || tagCreating}}"
+            bindtap="createTag"
+          >创建</button>
+        </view>
+      </view>
+    </view>
+    <view class="wb-sheet__actions">
+      <button class="btn-ghost" hover-class="none" bindtap="closeTagEdit">取消</button>
+      <button
+        class="btn-primary"
+        hover-class="none"
+        loading="{{tagSubmitting}}"
+        disabled="{{tagSubmitting}}"
+        bindtap="onTagSubmit"
+      >保存</button>
+    </view>
+  </view>
+</view>
+
+<!-- ============ 弹层③：「+」操作菜单（自绘，丰富版：彩色图标 + 标题 + 描述） ============ -->
+<view wx:if="{{actionVisible}}" class="wb-mask" catchtap="closeAction">
+  <view class="wb-sheet wb-sheet--menu" catchtap="noop">
+    <view class="wb-sheet__header">
+      <text class="wb-sheet__title">添加词条</text>
+      <view class="wb-sheet__close" bindtap="closeAction">✕</view>
+    </view>
+    <view class="wb-actions">
+      <view
+        wx:for="{{actionItems}}"
+        wx:key="value"
+        class="wb-action"
+        data-value="{{item.value}}"
+        bindtap="onActionItem"
+        hover-class="wb-action--hover"
+      >
+        <view class="wb-action__icon" style="background: {{item.mode}}">{{item.emoji}}</view>
+        <view class="wb-action__main">
+          <view class="wb-action__title">
+            {{item.title}}
+            <text wx:if="{{item.soon}}" class="wb-action__soon">即将上线</text>
+          </view>
+          <view class="wb-action__desc">{{item.desc}}</view>
+        </view>
+        <text class="wb-action__arrow">›</text>
+      </view>
+    </view>
+  </view>
+</view>

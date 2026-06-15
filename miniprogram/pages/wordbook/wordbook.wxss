@@ -1,0 +1,538 @@
+/* pages/wordbook/wordbook.wxss —— 仅页面特有样式；颜色一律走 app.wxss 的 var(--x) */
+
+.wb-search-ph { color: var(--text-3); }
+
+/* 工具栏：视图切换 + 词/短语切换 */
+.wb-tools {
+  margin-top: 20rpx;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+/* ============ 标签筛选面板（可折叠） ============ */
+.wb-tagfilter {
+  margin-top: 20rpx;
+  padding: 0;
+  overflow: hidden;
+}
+.wb-tagfilter__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 28rpx;
+}
+.wb-tagfilter__title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.wb-tagfilter__summary {
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+.wb-tagfilter__clear {
+  font-size: 24rpx;
+  color: var(--primary);
+}
+.wb-tagfilter__arrow {
+  font-size: 22rpx;
+  color: var(--text-3);
+}
+.wb-tagfilter__body {
+  padding: 0 28rpx 28rpx;
+  border-top: 2rpx solid var(--line);
+}
+.wb-tagfilter__tip {
+  font-size: 22rpx;
+  color: var(--text-3);
+  margin: 20rpx 0;
+}
+.wb-tagfilter__empty {
+  font-size: 24rpx;
+  color: var(--text-3);
+  padding: 16rpx 0;
+}
+.wb-tagfilter__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+/* 可选标签 chip：未选=描边灰，选中=注入标签色实底 */
+.wb-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 56rpx;
+  padding: 0 24rpx;
+  border-radius: var(--r-pill);
+  font-size: 24rpx;
+  color: var(--text-2);
+  background: #f2f4f7;
+  border: 2rpx solid var(--line);
+  box-sizing: border-box;
+}
+.wb-chip--on {
+  color: #fff;
+  font-weight: 600;
+  /* 背景色与边框色由内联 style 注入标签色 */
+}
+
+/* ============ 列表区：左滚动列表 + 右字母条 ============ */
+.wb-az {
+  position: relative;
+  display: flex;
+}
+.wb-az__scroll {
+  /* 给右侧字母条留出宽度；高度撑满可视区。
+     减去：顶部搜索/工具/标题约 360rpx + 底部自定义 tabBar(110rpx+安全区)约 130rpx，
+     否则列表底部会被 fixed 的 tabBar 盖住(scroll-view 内部内容不受页面 padding 影响)。 */
+  flex: 1;
+  height: calc(100vh - 360rpx - 130rpx - env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+/* 首字母分组 */
+.wb-group { margin-bottom: 12rpx; }
+
+/* ============ 放大的字母分组头：大号加粗 + 主色竖条 + 浅底，吸顶 ============ */
+.wb-letter {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  padding: 12rpx 8rpx 12rpx 24rpx;
+  margin-bottom: 4rpx;
+  background: var(--bg);
+}
+.wb-letter::before {
+  content: "";
+  width: 8rpx;
+  height: 36rpx;
+  border-radius: 4rpx;
+  background: var(--primary-grad);
+  margin-right: 16rpx;
+}
+.wb-letter__char {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* 列表卡（紧凑） */
+.wb-list { padding: 4rpx 28rpx; }
+
+/* 列表项：词 + 右侧角标/箭头 */
+.wb-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 26rpx 0;
+}
+.wb-item + .wb-item { border-top: 2rpx solid var(--line); }
+.wb-item--hover { background: #f6f9fd; }
+.wb-item__main { min-width: 0; flex: 1; }
+.wb-item__word {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wb-item__arrow {
+  font-size: 36rpx;
+  color: var(--text-3);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* 标签视图列表项：词在上，标签 chip 在下 */
+.wb-item--tag { align-items: center; }
+.wb-item__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 10rpx;
+}
+.wb-item__notags {
+  font-size: 22rpx;
+  color: var(--text-3);
+  font-style: italic;
+}
+.wb-minitag {
+  display: inline-flex;
+  align-items: center;
+  height: 36rpx;
+  padding: 0 14rpx;
+  border-radius: var(--r-pill);
+  color: #fff;
+  font-size: 20rpx;
+  line-height: 1;
+  max-width: 240rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 右侧 A-Z 字母条 */
+.wb-indexbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rpx;
+  padding: 8rpx 4rpx;
+  margin-left: 8rpx;
+  flex-shrink: 0;
+}
+.wb-indexbar__item {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: var(--text-3);
+  border-radius: 50%;
+  text-transform: uppercase;
+}
+.wb-indexbar__item--on {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ============ 空态 ============ */
+.wb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 96rpx 0;
+  gap: 16rpx;
+}
+.wb-empty__emoji { font-size: 80rpx; }
+.wb-empty__text { font-size: 26rpx; color: var(--text-3); }
+
+/* 加载/筛选提示 */
+.wb-foot {
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--text-3);
+  padding: 16rpx 0 8rpx;
+}
+
+/* ============ 「+」浮动按钮（右下角，左移避开字母条；简洁双色渐变） ============ */
+.wb-fab {
+  position: fixed;
+  /* 右下角，但左移到字母条左侧（字母条约 48rpx 宽、贴屏幕右边） */
+  right: 96rpx;
+  bottom: calc(180rpx + env(safe-area-inset-bottom));
+  z-index: 50;
+  width: 92rpx;
+  height: 92rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  /* 简洁双色斜向渐变（蓝→teal） */
+  background: linear-gradient(135deg, #3DA5F4, #16C0CB);
+  color: #fff;
+  font-size: 52rpx;
+  font-weight: 400;
+  line-height: 1;
+  box-shadow: 0 10rpx 22rpx rgba(61, 165, 244, 0.36);
+  transition: transform 0.15s ease;
+}
+.wb-fab--hover {
+  transform: scale(0.92);
+}
+
+/* ============ 通用弹层（底部抽屉，复刻 word-detail / tag-manage 蒙层规范） ============ */
+.wb-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(20, 30, 50, 0.45);
+  display: flex;
+  align-items: flex-end;
+}
+.wb-sheet {
+  width: 100%;
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: 32rpx 32rpx 0 0;
+  box-shadow: var(--shadow-lg);
+  /* 本页是 tab 页：自定义 tabBar(110rpx+safe-area, z 层永远压住页面 fixed 元素)会盖住
+     底部抽屉的最后一行，所以在 24rpx 基础留白上再加 110rpx tabBar 高度 = 134rpx。
+     三个弹层(加号菜单/状态/标签)共用本类，统一在这里清空，子容器不要再叠加。 */
+  padding-bottom: calc(134rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  animation: wb-slide-up 0.22s ease;
+}
+@keyframes wb-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.wb-sheet__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx 32rpx 12rpx;
+  flex-shrink: 0;
+}
+.wb-sheet__title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.wb-sheet__close {
+  position: absolute;
+  right: 28rpx;
+  top: 24rpx;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  color: var(--text-3);
+}
+.wb-sheet__word {
+  text-align: center;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--primary);
+  padding: 4rpx 32rpx 12rpx;
+  flex-shrink: 0;
+  word-break: break-word;
+}
+.wb-sheet__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12rpx 32rpx;
+  -webkit-overflow-scrolling: touch;
+}
+.wb-sheet__actions {
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx 32rpx 8rpx;
+  border-top: 2rpx solid var(--line);
+  flex-shrink: 0;
+}
+.wb-sheet__actions .btn-ghost,
+.wb-sheet__actions .btn-primary {
+  flex: 1;
+  width: auto;
+  height: 88rpx;
+  font-size: 30rpx;
+}
+.wb-btn--disabled { opacity: 0.5; }
+.wb-ph { color: var(--text-3); }
+
+/* ---- 状态编辑弹层 ---- */
+.wb-status-opt {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 24rpx 20rpx;
+  border-radius: var(--r-inner);
+  margin-bottom: 16rpx;
+  background: #f7f8fa;
+  border: 2rpx solid transparent;
+}
+.wb-status-opt--active {
+  background: rgba(61, 165, 244, 0.08);
+  border-color: var(--primary);
+}
+.wb-status-opt__radio {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 4rpx solid #d4d8de;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.wb-status-opt--active .wb-status-opt__radio {
+  border-color: var(--primary);
+}
+.wb-status-opt__dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+}
+.wb-dot--study      { background: var(--mode-study); }
+.wb-dot--review     { background: var(--mode-review); }
+.wb-dot--strengthen { background: var(--mode-strength); }
+.wb-dot--finish     { background: var(--success); }
+.wb-status-opt__label {
+  font-size: 30rpx;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* ---- 标签编辑弹层 ---- */
+.wb-tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+.wb-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 56rpx;
+  padding: 0 24rpx;
+  border-radius: var(--r-pill);
+  background: #f2f4f7;
+  color: var(--text-2);
+  font-size: 26rpx;
+  line-height: 1;
+}
+.wb-tag-pill--on {
+  color: #fff;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+.wb-tag-pill--new {
+  background: #fff;
+  color: var(--primary);
+  border: 2rpx dashed var(--primary);
+}
+.wb-tag-empty {
+  width: 100%;
+  font-size: 24rpx;
+  color: var(--text-3);
+  padding: 12rpx 0;
+}
+
+/* 新建标签子表单 */
+.wb-create {
+  margin-top: 24rpx;
+  padding: 24rpx;
+  background: #f7f8fa;
+  border-radius: var(--r-inner);
+}
+.wb-create__field {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 2rpx solid var(--line);
+}
+.wb-create__label {
+  font-size: 28rpx;
+  color: var(--text-2);
+  width: 90rpx;
+  flex-shrink: 0;
+}
+.wb-create__input {
+  flex: 1;
+  font-size: 30rpx;
+  color: var(--text);
+}
+.wb-create__color {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+.wb-create__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  flex: 1;
+}
+.wb-dot-color {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  border: 4rpx solid transparent;
+  box-sizing: border-box;
+}
+.wb-dot-color--active {
+  border-color: var(--text);
+  transform: scale(1.12);
+}
+.wb-create__actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 24rpx;
+}
+.wb-create__btn {
+  flex: 1;
+  width: auto;
+  height: 76rpx;
+  font-size: 28rpx;
+}
+
+/* ============ 「+」操作菜单项（自绘：彩色图标 + 标题 + 描述 + 待上线标） ============ */
+.wb-actions {
+  /* tabBar 清空已统一由 .wb-sheet 的 padding-bottom 负责，这里不再叠加 */
+  padding: 8rpx 4rpx;
+}
+.wb-action {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 20rpx 12rpx;
+  border-radius: 18rpx;
+}
+.wb-action--hover {
+  background: #f2f4f7;
+}
+.wb-action__icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 6rpx 14rpx rgba(20, 30, 50, 0.12);
+}
+.wb-action__main {
+  flex: 1;
+  min-width: 0;
+}
+.wb-action__title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.wb-action__soon {
+  font-size: 20rpx;
+  font-weight: 500;
+  color: var(--text-3);
+  background: var(--line);
+  padding: 2rpx 14rpx;
+  border-radius: var(--r-pill);
+}
+.wb-action__desc {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: var(--text-2);
+}
+.wb-action__arrow {
+  color: var(--text-3);
+  font-size: 34rpx;
+  flex-shrink: 0;
+}

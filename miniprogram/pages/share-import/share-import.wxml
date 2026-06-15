@@ -1,0 +1,195 @@
+<!-- pages/share-import/share-import.wxml —— 使用分享码导入（普通页，三步流 + 详情弹层）
+     复刻 H5 ShareImportModal.vue：输码 → 预览 → 结果；点词条看详情。无 vant，自绘复用 app.wxss。 -->
+<view class="page si">
+
+  <!-- ============ 第①步：输入分享码 ============ -->
+  <block wx:if="{{step === 'input'}}">
+    <view class="section-title">📥 输入分享码</view>
+    <view class="card si-input-card">
+      <textarea
+        class="si-token-input"
+        value="{{token}}"
+        placeholder="粘贴朋友发给你的分享码"
+        placeholder-class="si-ph"
+        maxlength="-1"
+        auto-height
+        bindinput="onTokenInput"
+      />
+      <view class="si-hint">⏰ 分享码 5 分钟内有效</view>
+    </view>
+    <view class="si-input-actions">
+      <button class="btn-ghost si-btn" hover-class="none" bindtap="onClose">关闭</button>
+      <button
+        class="btn-primary si-btn {{!canPreview ? 'si-btn--disabled' : ''}}"
+        hover-class="none"
+        loading="{{previewing}}"
+        disabled="{{!canPreview || previewing}}"
+        bindtap="onPreview"
+      >预览</button>
+    </view>
+  </block>
+
+  <!-- ============ 第②步：预览内容 ============ -->
+  <block wx:elif="{{step === 'preview'}}">
+    <!-- 摘要 -->
+    <view class="section-title">📦 分享内容</view>
+    <view class="card si-summary">
+      <view class="si-summary__row">
+        <text class="si-summary__label">来自</text>
+        <text class="si-summary__value">{{fromUsername}}</text>
+      </view>
+      <view class="si-summary__row">
+        <text class="si-summary__label">数量</text>
+        <view class="si-summary__value">
+          <text wx:if="{{showWordCount}}">{{wordCount}} 单词</text>
+          <text wx:if="{{showDot}}"> · </text>
+          <text wx:if="{{showPhraseCount}}">{{phraseCount}} 短语</text>
+        </view>
+      </view>
+      <view wx:if="{{hasTags}}" class="si-summary__row si-summary__row--last">
+        <text class="si-summary__label">标签</text>
+        <view class="si-summary__tags">
+          <text wx:for="{{previewTags}}" wx:key="name" class="si-tag-chip">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 标签导入模式（仅有标签时） -->
+    <block wx:if="{{hasTags}}">
+      <view class="section-title">🏷️ 标签导入</view>
+      <view class="card si-tagmode">
+        <view
+          wx:for="{{tagModeOptions}}"
+          wx:key="value"
+          class="si-tagmode__opt {{tagImportMode === item.value ? 'si-tagmode__opt--on' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onPickTagMode"
+        >{{item.label}}</view>
+      </view>
+    </block>
+
+    <!-- 词条列表 -->
+    <view class="section-title">📝 词条列表<text class="si-sub">（点击查看详情）</text></view>
+    <view class="card si-items">
+      <view
+        wx:for="{{items}}"
+        wx:key="key"
+        class="si-item"
+        data-id="{{item.id}}"
+        data-type="{{item.wordType}}"
+        data-text="{{item.text}}"
+        bindtap="onItemTap"
+      >
+        <view class="si-item__main">
+          <view class="si-item__text">
+            <text class="si-item__word">{{item.text}}</text>
+            <text wx:if="{{item.isPhrase}}" class="si-item__badge">短语</text>
+          </view>
+          <view wx:if="{{item.translation}}" class="si-item__trans">{{item.translation}}</view>
+          <view wx:if="{{item.tagNames.length > 0}}" class="si-item__tags">
+            <text wx:for="{{item.tagNames}}" wx:for-item="tn" wx:key="*this" class="si-tag-pill">{{tn}}</text>
+          </view>
+        </view>
+        <text class="si-item__arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 底部留白：避开固定操作栏 -->
+    <view class="si-bottom-spacer"></view>
+
+    <!-- 固定底部操作栏 -->
+    <view class="si-bottombar">
+      <button class="btn-ghost si-btn" hover-class="none" bindtap="onReset">重新输入</button>
+      <button
+        class="btn-primary si-btn"
+        hover-class="none"
+        loading="{{submitting}}"
+        disabled="{{submitting}}"
+        bindtap="onConfirm"
+      >确认导入</button>
+    </view>
+  </block>
+
+  <!-- ============ 第③步：导入结果 ============ -->
+  <block wx:elif="{{step === 'result'}}">
+    <view class="si-result">
+      <view class="si-result__icon">✅</view>
+      <text class="si-result__title">导入成功</text>
+      <view class="si-result__detail">
+        <view class="si-result__line">
+          单词 +{{rWordImported}}<text wx:if="{{showWordSkip}}" class="si-skip">（跳过 {{rWordSkipped}}）</text>
+        </view>
+        <view class="si-result__line">
+          短语 +{{rPhraseImported}}<text wx:if="{{showPhraseSkip}}" class="si-skip">（跳过 {{rPhraseSkipped}}）</text>
+        </view>
+        <view wx:if="{{showTagImport}}" class="si-result__line">新标签 +{{rTagImported}}</view>
+      </view>
+      <button class="btn-primary si-result__btn" hover-class="none" bindtap="onClose">完成</button>
+    </view>
+  </block>
+
+  <!-- ============ 词条详情弹层 ============ -->
+  <view wx:if="{{detailVisible}}" class="si-mask" catchtap="closeDetail">
+    <view class="si-sheet" catchtap="noop">
+      <view class="si-sheet__header">
+        <text class="si-sheet__title">{{detailTitle}}</text>
+        <view class="si-sheet__close" bindtap="closeDetail">✕</view>
+      </view>
+
+      <view wx:if="{{detailLoading}}" class="si-sheet__loading">加载中…</view>
+
+      <scroll-view wx:else scroll-y class="si-sheet__body">
+        <!-- 单词详情 -->
+        <block wx:if="{{detailKind === 'word'}}">
+          <view wx:if="{{detailPhonetics.length > 0}}" class="si-phonetics">
+            <text wx:for="{{detailPhonetics}}" wx:key="label" class="si-phonetic">{{item.label}} {{item.text}}</text>
+          </view>
+          <view wx:for="{{detailPosList}}" wx:key="index" class="si-pos">
+            <text class="si-pos__label">{{item.posLabel}}</text>
+            <view wx:if="{{item.translation}}" class="si-pos__trans">{{item.translation}}</view>
+            <block wx:if="{{item.pictureUrl}}">
+              <image
+                wx:if="{{!picErrorMap[item.pictureUrl]}}"
+                class="si-pos__pic"
+                src="{{item.pictureUrl}}"
+                mode="aspectFill"
+                data-url="{{item.pictureUrl}}"
+                binderror="onPicError"
+              />
+              <view wx:else class="placeholder-img placeholder-img--sm" style="--mode: var(--mode-study)">🖼️</view>
+            </block>
+            <view wx:if="{{item.examples.length > 0}}" class="si-examples">
+              <view wx:for="{{item.examples}}" wx:for-item="ex" wx:key="en" class="si-example">
+                <text wx:if="{{ex.en}}" class="si-example__en">{{ex.en}}</text>
+                <text wx:if="{{ex.zh}}" class="si-example__zh">{{ex.zh}}</text>
+              </view>
+            </view>
+          </view>
+        </block>
+
+        <!-- 短语详情 -->
+        <block wx:elif="{{detailKind === 'phrase'}}">
+          <view wx:if="{{detailPhraseTranslation}}" class="si-pos__trans">{{detailPhraseTranslation}}</view>
+          <block wx:if="{{detailPhrasePictureUrl}}">
+            <image
+              wx:if="{{!picErrorMap[detailPhrasePictureUrl]}}"
+              class="si-pos__pic"
+              src="{{detailPhrasePictureUrl}}"
+              mode="aspectFill"
+              data-url="{{detailPhrasePictureUrl}}"
+              binderror="onPicError"
+            />
+            <view wx:else class="placeholder-img placeholder-img--sm" style="--mode: var(--mode-spot)">🖼️</view>
+          </block>
+          <view wx:if="{{detailPhraseExamples.length > 0}}" class="si-examples">
+            <view wx:for="{{detailPhraseExamples}}" wx:for-item="ex" wx:key="en" class="si-example">
+              <text wx:if="{{ex.en}}" class="si-example__en">{{ex.en}}</text>
+              <text wx:if="{{ex.zh}}" class="si-example__zh">{{ex.zh}}</text>
+            </view>
+          </view>
+        </block>
+      </scroll-view>
+    </view>
+  </view>
+
+</view>

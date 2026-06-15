@@ -1,0 +1,158 @@
+/* pages/study/study.wxss —— 仅写本页特有微调，颜色一律用全局变量 */
+
+/* 顶部标题行 */
+.study-head {
+  margin: 8rpx 4rpx 20rpx;
+}
+.study-head__emoji {
+  font-size: 40rpx;
+}
+.study-head__title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* 顶部进度条 */
+.study-bar {
+  height: 12rpx;
+  border-radius: var(--r-pill);
+  background: var(--line);
+  overflow: hidden;
+  margin: 0 4rpx 28rpx;
+}
+.study-bar__fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--mode-study);
+  transition: width 0.3s ease;
+}
+
+/* 学习卡微调 */
+.study-card {
+  padding-top: 32rpx;
+}
+
+/* 词性标签 */
+.study-pos {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+
+/* 音标区 */
+.study-phon {
+  margin-top: 24rpx;
+  width: 100%;
+  align-items: center;
+}
+.study-phon__label {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: rgba(61, 165, 244, 0.12);
+  color: var(--mode-study);
+  font-size: 22rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.study-phon__txt {
+  margin-top: 0;
+}
+
+/* 例句区 */
+.study-ex {
+  width: 100%;
+  margin-top: 32rpx;
+  padding-top: 28rpx;
+  border-top: 2rpx solid var(--line);
+}
+.study-ex__head {
+  margin-bottom: 16rpx;
+}
+.study-ex__title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.study-ex__count {
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+
+/* 例句轮播 */
+.study-swiper {
+  height: 200rpx;
+}
+.study-ex__item {
+  box-sizing: border-box;
+  height: 100%;
+  margin-right: 24rpx;
+  padding: 28rpx;
+  border-radius: var(--r-inner);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14rpx;
+}
+.study-ex__en {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.5;
+}
+.study-ex__zh {
+  font-size: 26rpx;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+/* 轮播指示点 */
+.study-dots {
+  margin-top: 20rpx;
+}
+.study-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--line);
+  transition: all 0.3s ease;
+}
+.study-dot--active {
+  width: 28rpx;
+  border-radius: var(--r-pill);
+  background: var(--mode-study);
+}
+
+/* 底部按钮 */
+.study-foot {
+  margin-top: 40rpx;
+}
+
+/* 多行释义容器（按 \n 分行） */
+.study-meaning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+}
+
+/* 加载 / 空态卡片 */
+.study-empty {
+  align-items: center;
+  text-align: center;
+}
+.study-empty__text {
+  margin-top: 28rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.study-empty__sub {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: var(--text-3);
+}

@@ -1,0 +1,160 @@
+/* pages/share-generate/share-generate.wxss —— 仅页面特有样式；颜色一律走 app.wxss 的 var(--x) */
+
+.sg {
+  /* 普通页（非 tab），底部给主按钮留呼吸 */
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+
+/* ============ 分享设置卡 ============ */
+.sg-card {
+  padding: 8rpx 32rpx;
+}
+
+/* 字段行（标签 + 单选 chip 组） */
+.sg-field {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 28rpx 0;
+  border-bottom: 2rpx solid var(--line);
+}
+.sg-field--last {
+  border-bottom: none;
+}
+.sg-field__label {
+  width: 150rpx;
+  flex-shrink: 0;
+  font-size: 28rpx;
+  color: var(--text-2);
+}
+
+/* 单选 chip 组（同 word-add 的 wa-chip 范式） */
+.sg-chips {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+.sg-chip {
+  height: 56rpx;
+  padding: 0 28rpx;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--r-pill);
+  background: #f2f4f7;
+  color: var(--text-2);
+  font-size: 26rpx;
+  line-height: 1;
+}
+.sg-chip--active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6rpx 16rpx rgba(61, 165, 244, 0.28);
+}
+
+/* 段标题右侧「已选 N 个」计数 */
+.sg-count {
+  margin-left: auto;
+  font-size: 24rpx;
+  font-weight: 400;
+  color: var(--text-3);
+}
+
+/* ============ 标签多选卡 ============ */
+.sg-tags {
+  padding: 28rpx 32rpx;
+}
+.sg-tags__loading {
+  text-align: center;
+  color: var(--text-3);
+  font-size: 26rpx;
+  padding: 24rpx 0;
+}
+.sg-tags__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+/* 标签 chip：未选=描边灰，选中=注入标签色实底（同 wordbook 的 wb-chip 范式） */
+.sg-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 56rpx;
+  padding: 0 26rpx;
+  border-radius: var(--r-pill);
+  font-size: 26rpx;
+  color: var(--text-2);
+  background: #f2f4f7;
+  border: 2rpx solid var(--line);
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sg-tag--on {
+  color: #fff;
+  font-weight: 600;
+  /* 背景色与边框色由内联 style 注入标签色 */
+}
+
+/* 标签空态（emoji + 文案） */
+.sg-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32rpx 0;
+}
+.sg-empty__emoji {
+  font-size: 72rpx;
+}
+.sg-empty__text {
+  font-size: 26rpx;
+  color: var(--text-3);
+  margin-top: 12rpx;
+}
+
+/* ============ 生成结果卡 ============ */
+.sg-result {
+  display: flex;
+  flex-direction: column;
+}
+/* 分享码：大号等宽 + 主色虚线框（对照 H5 token-box，放大便于读出/抄写） */
+.sg-token {
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 34rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  color: var(--text);
+  word-break: break-all;
+  text-align: center;
+  line-height: 1.5;
+  background: var(--bg);
+  border: 2rpx dashed var(--primary);
+  border-radius: var(--r-inner);
+  padding: 24rpx;
+}
+.sg-result__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  margin: 16rpx 4rpx 24rpx;
+}
+.sg-result__tip {
+  font-size: 24rpx;
+  color: var(--text-2);
+}
+.sg-result__expire {
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+.sg-copy {
+  height: 88rpx;
+  font-size: 30rpx;
+}
+
+/* ============ 底部主操作按钮 ============ */
+.sg-submit {
+  margin-top: 40rpx;
+}

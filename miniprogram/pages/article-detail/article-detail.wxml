@@ -1,0 +1,18 @@
+<!-- pages/article-detail/article-detail.wxml —— 收录文章详情（普通页） -->
+<view class="page ad">
+
+  <view wx:if="{{loading}}" class="ad-state">加载中…</view>
+
+  <view wx:elif="{{loadError}}" class="ad-state">
+    <view class="ad-state__emoji">😵</view>
+    <text class="ad-state__text">加载失败</text>
+    <button class="ad-retry" hover-class="none" bindtap="loadDetail">重试</button>
+  </view>
+
+  <article-renderer
+    wx:elif="{{article}}"
+    article="{{article}}"
+    show-archive="{{false}}"
+  />
+
+</view>

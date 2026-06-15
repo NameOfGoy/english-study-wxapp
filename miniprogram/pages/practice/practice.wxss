@@ -1,0 +1,118 @@
+/* practice.wxss —— 仅页面特有微调，配色一律走全局 var(--x) */
+
+.practice-hero {
+  padding: 16rpx 0 8rpx;
+}
+.practice-hero__sub {
+  display: block;
+  margin-top: 12rpx;
+}
+
+/* 标签筛选说明：紧贴 section-title 下方，淡灰小字提示作用范围 */
+.practice-filter-hint {
+  /* section-title 自带 20rpx 下边距，这里上提贴近并加左缩进对齐标题文字 */
+  margin: -12rpx 4rpx 12rpx;
+  padding-left: 4rpx;
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+
+/* 大号模式卡：纵向列表，卡片间距 24rpx */
+.mode-list {
+  margin-top: 16rpx;
+}
+.mode-card--lg {
+  padding: 36rpx 32rpx;
+}
+.mode-card--lg + .mode-card--lg {
+  margin-top: 24rpx;
+}
+
+/* 占位图作为模式卡左侧大图标块（取 var(--mode)） */
+.mode-card__art {
+  width: 112rpx;
+  height: 112rpx;
+  font-size: 56rpx;
+  flex-shrink: 0;
+}
+
+/* 右侧待练数胶囊：模式色描边 + 通用浅底（避开 color-mix 兼容问题） */
+.mode-card__pill {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+  padding: 8rpx 20rpx;
+  border-radius: var(--r-pill);
+  background: var(--bg);
+  border: 2rpx solid var(--mode);
+}
+.mode-card__count {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: var(--mode);
+  line-height: 1;
+}
+.mode-card__unit {
+  font-size: 22rpx;
+  color: var(--mode);
+  opacity: .85;
+}
+
+.mode-card__desc--lg {
+  margin-top: 10rpx;
+  line-height: 1.5;
+}
+
+/* 文章练习入口卡 */
+.article-entries {
+  margin-top: 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.article-entry {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  background: var(--card);
+  border-radius: var(--r-card);
+  padding: 28rpx 32rpx;
+  box-shadow: var(--shadow);
+}
+.article-entry__icon {
+  width: 88rpx;
+  height: 88rpx;
+  flex-shrink: 0;
+  border-radius: var(--r-inner);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+}
+.article-entry__icon--instant {
+  background: rgba(61, 165, 244, 0.12);
+}
+.article-entry__icon--library {
+  background: rgba(155, 109, 255, 0.12);
+}
+.article-entry__title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.article-entry__desc {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+.article-entry__arrow {
+  flex-shrink: 0;
+  font-size: 40rpx;
+  color: var(--text-3);
+}
+
+.practice-tip {
+  text-align: center;
+  margin-top: 40rpx;
+  font-size: 24rpx;
+}

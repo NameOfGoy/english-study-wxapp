@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "article-renderer": "/components/article-renderer/index"
+  },
+  "navigationBarTitleText": "即时文章"
+}

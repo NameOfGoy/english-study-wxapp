@@ -1,0 +1,144 @@
+/* pages/article-library/article-library.wxss —— 颜色走 app.wxss 的 var(--x) */
+
+.al {
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+}
+
+/* 搜索 + 筛选 */
+.al-filters {
+  background: var(--card);
+  border-bottom: 2rpx solid var(--line);
+}
+.al-search {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 20rpx 32rpx;
+  padding: 0 24rpx;
+  height: 72rpx;
+  background: var(--bg);
+  border-radius: var(--r-pill);
+}
+.al-search__icon {
+  font-size: 30rpx;
+}
+.al-search__input {
+  flex: 1;
+  font-size: 28rpx;
+  color: var(--text);
+}
+.al-ph {
+  color: var(--text-3);
+}
+
+.al-tagfilter {
+  border-top: 2rpx solid var(--line);
+}
+.al-tf__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 32rpx;
+  font-size: 28rpx;
+  color: var(--text);
+}
+.al-tf__summary {
+  color: var(--text-3);
+  font-size: 24rpx;
+  margin-left: 8rpx;
+}
+.al-tf__arrow {
+  font-size: 20rpx;
+  color: var(--text-3);
+}
+.al-tf__body {
+  padding: 0 32rpx 24rpx;
+}
+.al-tf__loading,
+.al-tf__empty {
+  text-align: center;
+  color: var(--text-3);
+  font-size: 24rpx;
+  padding: 12rpx 0;
+}
+.al-tf__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+.al-tagchip {
+  padding: 8rpx 24rpx;
+  border-radius: var(--r-pill);
+  background: #f2f4f7;
+  color: var(--text-2);
+  font-size: 24rpx;
+}
+.al-tagchip--on {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 列表 */
+.al-list {
+  padding: 24rpx 32rpx;
+}
+.al-row {
+  background: var(--card);
+  border-radius: var(--r-card);
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+  box-shadow: var(--shadow);
+}
+.al-row__title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+  word-break: break-word;
+}
+.al-row__title-zh {
+  color: var(--text-2);
+  font-size: 28rpx;
+  font-weight: 400;
+}
+.al-row__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+.al-tag {
+  color: #fff;
+  font-size: 22rpx;
+  padding: 4rpx 18rpx;
+  border-radius: var(--r-pill);
+}
+.al-row__words {
+  font-size: 24rpx;
+  color: var(--text-3);
+  margin-top: 14rpx;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* 底部状态 */
+.al-foot {
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--text-3);
+  padding: 24rpx 0;
+}
+.al-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 0;
+}
+.al-empty__emoji {
+  font-size: 96rpx;
+}
+.al-empty__text {
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  color: var(--text-3);
+}

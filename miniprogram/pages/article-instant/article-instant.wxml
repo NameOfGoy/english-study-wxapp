@@ -1,0 +1,194 @@
+<!-- pages/article-instant/article-instant.wxml —— 即时文章生成向导（普通页）
+     复刻 H5 ArticleInstant.vue：4 步向导 + 生成中全屏 loading + 结果用 article-renderer 组件。 -->
+<view class="page ai">
+
+  <!-- 步骤指示 -->
+  <view class="ai-steps">
+    <block wx:for="{{stepTitles}}" wx:key="*this" wx:for-item="t">
+      <view class="ai-stepdot {{index <= stepActive ? 'ai-stepdot--on' : ''}}">
+        <view class="ai-stepdot__num">{{index + 1}}</view>
+        <text class="ai-stepdot__label">{{t}}</text>
+      </view>
+      <view wx:if="{{index < stepTitles.length - 1}}" class="ai-stepline {{index < stepActive ? 'ai-stepline--on' : ''}}"></view>
+    </block>
+  </view>
+
+  <!-- ============ 步骤1：挑选方式 ============ -->
+  <block wx:if="{{step === 1}}">
+    <view class="ai-block-title">挑选方式</view>
+    <view class="ai-methods">
+      <view
+        class="ai-method {{method === 'random' ? 'ai-method--on' : ''}}"
+        data-method="random"
+        bindtap="onPickMethod"
+      >
+        <view class="ai-method__icon">🎲</view>
+        <view class="ai-method__title">随机</view>
+        <view class="ai-method__desc">系统从筛选结果中随机挑 3~8 个词语</view>
+      </view>
+      <view
+        class="ai-method {{method === 'self' ? 'ai-method--on' : ''}}"
+        data-method="self"
+        bindtap="onPickMethod"
+      >
+        <view class="ai-method__icon">✍️</view>
+        <view class="ai-method__title">自选</view>
+        <view class="ai-method__desc">自己从词库里勾选要练的词语</view>
+      </view>
+    </view>
+
+    <view wx:if="{{method === 'random'}}" class="ai-count">
+      <text class="ai-count__label">目标词数</text>
+      <view class="ai-stepper">
+        <view class="ai-stepper__btn" data-delta="-1" bindtap="onChangeCount">−</view>
+        <text class="ai-stepper__num">{{randomCount}}</text>
+        <view class="ai-stepper__btn" data-delta="1" bindtap="onChangeCount">＋</view>
+      </view>
+      <text class="ai-count__hint">(3~8)</text>
+    </view>
+
+    <view class="ai-footer">
+      <button class="ai-btn ai-btn--primary" hover-class="none" bindtap="toStep2">下一步</button>
+    </view>
+  </block>
+
+  <!-- ============ 步骤2：筛选 ============ -->
+  <block wx:elif="{{step === 2}}">
+    <view class="ai-block-title">状态</view>
+    <view class="ai-opts">
+      <view
+        wx:for="{{statusOptions}}"
+        wx:key="value"
+        class="ai-opt {{filterStatus === item.value ? 'ai-opt--on' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="onPickStatus"
+      >{{item.label}}</view>
+    </view>
+
+    <view class="ai-block-title">类别</view>
+    <view class="ai-opts">
+      <view
+        wx:for="{{categoryOptions}}"
+        wx:key="value"
+        class="ai-opt {{filterCategory === item.value ? 'ai-opt--on' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="onPickCategory"
+      >{{item.label}}</view>
+    </view>
+
+    <!-- 类别=标签 → 标签多选 -->
+    <view wx:if="{{showTagPicker}}" class="ai-tagpick">
+      <view wx:if="{{tagsLoading}}" class="ai-tagpick__loading">加载中…</view>
+      <view wx:elif="{{tagOptions.length === 0}}" class="ai-tagpick__empty">还没有标签，去词典创建一个吧</view>
+      <view wx:else class="ai-tagpick__grid">
+        <view
+          wx:for="{{tagOptions}}"
+          wx:key="id"
+          class="ai-tagchip {{item.selected ? 'ai-tagchip--on' : ''}}"
+          style="{{item.selected ? item.style : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onToggleTag"
+        >{{item.name}}</view>
+      </view>
+    </view>
+
+    <view class="ai-footer ai-footer--row">
+      <button class="ai-btn ai-btn--ghost" hover-class="none" bindtap="onPrevStep">上一步</button>
+      <button
+        class="ai-btn ai-btn--primary"
+        hover-class="none"
+        loading="{{candidatesLoading}}"
+        disabled="{{candidatesLoading}}"
+        bindtap="onStep2Next"
+      >{{method === 'random' ? '生成文章' : '下一步'}}</button>
+    </view>
+  </block>
+
+  <!-- ============ 步骤3：自选词语 ============ -->
+  <block wx:elif="{{step === 3}}">
+    <view class="ai-block-title">
+      选择词语
+      <text class="ai-selcount {{selectedOk ? 'ai-selcount--ok' : ''}}">已选 {{selectedCount}}（需 3~8）</text>
+    </view>
+
+    <view class="ai-search">
+      <text class="ai-search__icon">🔍</text>
+      <input
+        class="ai-search__input"
+        placeholder="搜索词语或释义"
+        placeholder-class="ai-ph"
+        value="{{candidateKeyword}}"
+        bindinput="onCandidateInput"
+      />
+    </view>
+
+    <view wx:if="{{candidatesLoading}}" class="ai-state">加载中…</view>
+    <view wx:elif="{{candidateView.length === 0}}" class="ai-state">
+      <view class="ai-state__emoji">🤔</view>
+      <text>当前筛选下没有可选词语</text>
+    </view>
+    <view wx:else class="card ai-candlist">
+      <view
+        wx:for="{{candidateView}}"
+        wx:key="key"
+        class="ai-cand {{item.picked ? 'ai-cand--on' : ''}} {{item.disabledPick ? 'ai-cand--disabled' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onTogglePick"
+      >
+        <view class="ai-cand__check">{{item.picked ? '✓' : ''}}</view>
+        <view class="ai-cand__main">
+          <view class="ai-cand__word">
+            {{item.word}}
+            <text class="ai-cand__type">{{item.typeLabel}}</text>
+          </view>
+          <view wx:if="{{item.meaning}}" class="ai-cand__meaning">{{item.meaning}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="ai-footer">
+      <view class="ai-footer__tip {{selectedOk ? 'ai-footer__tip--ok' : ''}}">已选 {{selectedCount}} 个（需 3~8）</view>
+      <view class="ai-footer--row">
+        <button class="ai-btn ai-btn--ghost" hover-class="none" bindtap="onPrevStep">上一步</button>
+        <button
+          class="ai-btn ai-btn--primary {{!selectedOk ? 'ai-btn--disabled' : ''}}"
+          hover-class="none"
+          disabled="{{!selectedOk}}"
+          bindtap="generate"
+        >生成文章</button>
+      </view>
+    </view>
+  </block>
+
+  <!-- ============ 步骤4：结果 ============ -->
+  <block wx:elif="{{step === 4}}">
+    <view wx:if="{{generationError}}" class="ai-error">
+      <view class="ai-error__emoji">😵</view>
+      <text class="ai-error__text">生成失败，请重试</text>
+      <view class="ai-error__actions">
+        <button class="ai-btn ai-btn--ghost" hover-class="none" bindtap="onBackToEdit">返回修改</button>
+        <button class="ai-btn ai-btn--primary" hover-class="none" bindtap="onRetry">重试</button>
+      </view>
+    </view>
+    <article-renderer
+      wx:elif="{{article}}"
+      article="{{article}}"
+      show-archive="{{true}}"
+      archiving="{{archiving}}"
+      archived="{{archived}}"
+      bind:archive="onArchive"
+      bind:home="onHome"
+    />
+  </block>
+
+  <!-- ============ 生成中全屏 loading ============ -->
+  <view wx:if="{{generating}}" class="ai-loader">
+    <view class="ai-loader__card">
+      <view class="ai-loader__spinner"></view>
+      <text class="ai-loader__text">正在生成文章…</text>
+      <text class="ai-loader__timer">{{seconds}}s</text>
+      <text wx:if="{{seconds >= 20}}" class="ai-loader__hint">生成较长文章可能需要 30~60 秒，请耐心等待</text>
+    </view>
+  </view>
+
+</view>

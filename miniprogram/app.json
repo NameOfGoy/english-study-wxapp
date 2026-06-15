@@ -1,0 +1,56 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/practice/practice",
+    "pages/wordbook/wordbook",
+    "pages/word-detail/word-detail",
+    "pages/word-add/word-add",
+    "pages/profile/profile",
+    "pages/study/study",
+    "pages/review/review",
+    "pages/strength/strength",
+    "pages/spot/spot",
+    "pages/login/login",
+    "pages/tag-manage/tag-manage",
+    "pages/share-generate/share-generate",
+    "pages/share-import/share-import",
+    "pages/search-add/search-add",
+    "pages/import-history/import-history",
+    "pages/article-instant/article-instant",
+    "pages/article-library/article-library",
+    "pages/article-detail/article-detail"
+  ],
+  "window": {
+    "backgroundColor": "#F5F7FA",
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#3DA5F4",
+    "navigationBarTitleText": "单词记忆助手",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#9AA3AF",
+    "selectedColor": "#3DA5F4",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/practice/practice",
+        "text": "练习"
+      },
+      {
+        "pagePath": "pages/wordbook/wordbook",
+        "text": "词库"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
