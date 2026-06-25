@@ -136,6 +136,49 @@
   margin-top: 36rpx;
 }
 
+/* ============ mode=profile：完善资料（头像 chooseAvatar + 昵称 nickname） ============ */
+.login__profile .login__choice-tip { margin-bottom: 8rpx; }
+/* 头像按钮：只当点击容器——透明、无边框、清掉小程序 button 默认 line-height/描边，自身形状不可见。
+   用 flex 居中内层圆：即便 button 默认撑到整行宽，圆也会居中（不再偏左）。 */
+.login__avatar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 168rpx;
+  margin: 44rpx 0 8rpx;
+  padding: 0;
+  background: transparent;
+  border: none;
+  line-height: 0;
+}
+.login__avatar-btn::after { border: none; }
+/* 真正的圆形头像（与「我的」.profile-hero__avatar 一致：固定正方 + 50% 圆角 + 裁切） */
+.login__avatar {
+  width: 168rpx;
+  height: 168rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: #F2F6FC;
+  border: 2rpx solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login__avatar-img { display: block; width: 100%; height: 100%; }
+.login__avatar-ph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+}
+.login__avatar-ph-plus { font-size: 52rpx; line-height: 1; }
+.login__avatar-ph-txt { font-size: 24rpx; margin-top: 6rpx; }
+/* 头像与昵称之间留白 */
+.login__profile .login__field { margin-top: 24rpx; }
+
 /* ============ 底部次要入口（用账号登录 / 返回 / 用微信登录） ============ */
 .login__alt {
   margin-top: 32rpx;

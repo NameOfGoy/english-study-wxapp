@@ -24,7 +24,11 @@ import {
   updateStatus,
   updateWordTag,
   listWordsByTags,
-  importWord
+  importWord,
+  deleteWord,
+  deletePhrase,
+  batchDeleteWord,
+  batchDeletePhrase
 } from '../../services/dictionary'
 import { getTagList, addTag } from '../../services/tag'
 import { uploadFile, OSS_BUCKET } from '../../services/file'
@@ -47,10 +51,11 @@ interface ViewItem {
 }
 
 /** 视图切换胶囊（单词/状态/标签；"单词"标签随 kind 变"短语"） */
-const VIEW_KEYS: { key: ViewKey; word: string; phrase: string }[] = [
-  { key: 'word', word: '单词', phrase: '短语' },
-  { key: 'status', word: '状态', phrase: '状态' },
-  { key: 'tag', word: '标签', phrase: '标签' }
+// 视图标签固定（词/短语 已挪到搜索栏左侧切换，第一个视图叫"列表"，不再随 kind 变）
+const VIEW_KEYS: { key: ViewKey; label: string }[] = [
+  { key: 'word', label: '列表' },
+  { key: 'status', label: '状态' },
+  { key: 'tag', label: '标签' }
 ]
 
 /** 状态码（1学习/2复习/3强化/4完成）→ 文案 + 复用 app.wxss 的 .badge-status 修饰类 */
@@ -102,6 +107,9 @@ const ACTION_ITEMS: ActionItem[] = [
 /** 一次性全量拉取的 limit（id+word 数据极小，几百~几千条一次拉完） */
 const FULL_LIMIT = 100000
 
+/** 左滑露出的按钮区总宽（rpx）：状态/标签/删除 三按钮，每钮 120rpx ×3。与 wxss 的 .wb-row__actions 宽度一致 */
+const ACTIONS_WIDTH = 360
+
 /** 词条挂的标签 chip（标签视图行内展示用） */
 interface RowTag {
   id: number
@@ -121,6 +129,10 @@ interface Row {
   statusCls: string
   /** 该词条挂的标签 chip（标签视图展示；空数组=暂无标签） */
   tags: RowTag[]
+  /** 是否处于左滑打开态（露出三按钮）。位移由 WXS 在渲染层驱动，这里只存"开/关"供程序化收起与 change 观察器同步 */
+  open: boolean
+  /** 多选模式下是否勾选 */
+  checked: boolean
 }
 
 /** 字母分组：{ letter, rows[] } */
@@ -148,13 +160,15 @@ function letterKeyOf(word: string): string {
   return /[a-z]/.test(c) ? c : '#'
 }
 
-/** 按首字母把行分组并排序（'#' 排最后），组内可选 status 优先排前。返回 LetterGroup[] */
+/** 按首字母把行分组并排序（'#' 排最后），组内可选 status 优先排前。返回 LetterGroup[]。
+ *  每行做一次浅拷贝并把左滑/勾选等临时态归零：渲染产物与 _rows 不共享同一引用，
+ *  后续 setData 改 open/checked 时不会污染真源 _rows，重渲也总是干净起点。 */
 function groupByLetter(rows: Row[], statusFirst = false): LetterGroup[] {
   const map: Record<string, Row[]> = {}
   for (const r of rows) {
     const k = letterKeyOf(r.word)
     if (!map[k]) map[k] = []
-    map[k].push(r)
+    map[k].push({ ...r, open: false, checked: false })
   }
   const letters = Object.keys(map).sort((a, b) => {
     if (a === '#') return 1
@@ -227,11 +241,23 @@ interface PageData {
   // ---- 「+」操作菜单（自绘底部抽屉）----
   actionVisible: boolean
   actionItems: ActionItem[]
+
+  // ---- 删除交互：多选批删 + 左滑露出三按钮（状态/标签/删除）----
+  /** 多选模式开关（进入后点行=勾选，禁用左滑/详情） */
+  selectMode: boolean
+  /** 已选条数（底部操作条展示用） */
+  selectedCount: number
+  /** 是否已全选（左侧切换按钮文案用） */
+  allSelected: boolean
+  /** 左滑按钮区总宽（rpx），供 wxml 绑定按钮区宽度用 */
+  actionsWidth: number
+  /** 左滑按钮区总宽换算成 px，传给 WXS 做 transform clamp（onLoad 按屏宽算好） */
+  actionsWidthPx: number
 }
 
 Page<PageData, WechatMiniprogram.IAnyObject>({
   data: {
-    views: VIEW_KEYS.map((v) => ({ key: v.key, label: v.word })),
+    views: VIEW_KEYS.map((v) => ({ key: v.key, label: v.label })),
     activeView: 'word',
     activeKind: 'word',
     keyword: '',
@@ -269,7 +295,14 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
     tagCreating: false,
 
     actionVisible: false,
-    actionItems: []
+    actionItems: [],
+
+    selectMode: false,
+    selectedCount: 0,
+    allSelected: false,
+    actionsWidth: ACTIONS_WIDTH,
+    // 初值按设计宽 750rpx/2 估个 px，onLoad 拿到真实屏宽后覆盖
+    actionsWidthPx: ACTIONS_WIDTH / 2
   },
 
   // 搜索防抖计时器
@@ -289,6 +322,15 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
   // 当前正在编辑（状态/标签弹层）的词条 id
   _editId: 0,
 
+  // ---- 左滑打开态追踪 ----
+  // 手势位移在 WXS 渲染层直接驱动（不过桥），逻辑层只记"哪一行开着"：维持一次只一行、支持程序化收起。
+  // 当前左滑打开的行 id（0=无），配合 _openG/_openR 做定向 setData 收起。
+  _openId: 0,
+  _openG: -1,
+  _openR: -1,
+  // px→rpx 换算比例（设计宽 750rpx）。onLoad 一次算好，把 ACTIONS_WIDTH(rpx) 换成 px 传给 WXS clamp。
+  _rpxRatio: 2,
+
   onLoad() {
     // 实例级可变状态显式初始化：保证 onShow 读 this._rows 前它已存在。
     // （声明式类字段在部分编译/运行态下可能未挂到实例上，导致 this._rows undefined 崩溃。）
@@ -299,12 +341,26 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
     this._allTagsLoaded = false
     this._editId = 0
     this._scrollSpyLock = false
+    // 左滑打开态
+    this._openId = 0
+    this._openG = -1
+    this._openR = -1
+    // px→rpx 换算比例（设计宽 750rpx）。一次算好，把按钮区宽度换成 px 传 WXS。
+    let winW = 375
+    try {
+      winW = wx.getSystemInfoSync().windowWidth || 375
+    } catch (e) {
+      winW = 375
+    }
+    this._rpxRatio = 750 / winW
+    // ACTIONS_WIDTH 是 rpx；px = rpx / (750/winW) = rpx / _rpxRatio
+    this.setData({ actionsWidthPx: ACTIONS_WIDTH / this._rpxRatio })
   },
 
   onShow() {
-    // tab 页：词库 = 索引 2
+    // tab 页：词库 = 索引 2；并确保 tabBar 复位为显示（防从弹层中途 navigate 走后留隐藏态）
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar()!.setData({ selected: 2 })
+      this.getTabBar()!.setData({ selected: 2, hidden: false })
     }
     // 防御：极端情况下 _rows 仍未初始化也不崩
     if (!this._rows) this._rows = []
@@ -388,7 +444,9 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
       status: 0 as WordStatusCode | 0,
       statusText: '',
       statusCls: '',
-      tags: [] as RowTag[]
+      tags: [] as RowTag[],
+      open: false,
+      checked: false
     }))
   },
 
@@ -479,6 +537,10 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
    *   - 其余（单词/状态/标签未筛选）：用内存全量行分组；状态视图组内 status 优先。
    */
   _renderList(forceFilter = false) {
+    // 列表重建 → 所有行回到关闭态，清掉打开追踪
+    this._openId = 0
+    this._openG = -1
+    this._openR = -1
     const view = this.data.activeView
     // 标签视图 + 已勾选筛选标签 → 走服务端 AND 筛选（异步），其余走全量内存分组
     if (view === 'tag' && this.data.selectedFilterIds.length > 0) {
@@ -503,6 +565,10 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
    * 对照 H5 fetchTagFilter + displayWordsByLetter（筛选时用结果，否则用全量）。
    */
   async _applyTagFilter() {
+    // 列表重建 → 清打开追踪
+    this._openId = 0
+    this._openG = -1
+    this._openR = -1
     const ids = this.data.selectedFilterIds
     if (!ids.length) {
       this._renderList()
@@ -524,7 +590,9 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
           id: tg.id,
           name: tg.name,
           style: tg.style || '#3DA5F4'
-        }))
+        })),
+        open: false,
+        checked: false
       }))
       const groups = groupByLetter(rows)
       const letters = groups.map((g) => g.letter)
@@ -578,24 +646,21 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
 
   /* ===================== 顶部交互：切视图 / 切 kind / 搜索 / 字母条 ===================== */
 
-  /** 切视图（单词/状态/标签）。复用内存全量行，按需补 status / 拉标签。 */
+  /** 切视图（单词/状态/标签）。复用内存全量行，按需补 status / 拉标签。
+   *  切视图前退出多选 / 收起左滑（避免跨视图残留勾选/激活态）。 */
   async onSwitchView(e: WechatMiniprogram.TouchEvent) {
     const key = e.currentTarget.dataset.key as ViewKey
     if (key === this.data.activeView) return
+    if (this.data.selectMode) this.exitSelectMode()
     this.setData({ activeView: key, scrollIntoId: '' })
     await this._renderView(key)
   },
 
-  /** 切词 / 短语：影响 word_type 与列表来源，全量重载并重渲当前视图。 */
-  async onSwitchKind(e: WechatMiniprogram.TouchEvent) {
-    const kind = e.currentTarget.dataset.kind as Kind
-    if (kind === this.data.activeKind) return
-    // "单词/短语"视图标签文案随 kind 变
-    const views = VIEW_KEYS.map((v) => ({
-      key: v.key,
-      label: kind === 'phrase' ? v.phrase : v.word
-    }))
-    this.setData({ activeKind: kind, scrollIntoId: '', views })
+  /** 切 词 / 短语（搜索栏左侧 toggle，二选一）。整列表换源 → 退出多选、收起左滑、全量重载。 */
+  async onToggleKind() {
+    const kind: Kind = this.data.activeKind === 'phrase' ? 'word' : 'phrase'
+    if (this.data.selectMode) this.exitSelectMode()
+    this.setData({ activeKind: kind, scrollIntoId: '' })
     await this.reload()
   },
 
@@ -651,26 +716,44 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
   /* ===================== 列表项点击 → 内联编辑 / 跳详情 ===================== */
 
   /**
-   * 列表项点击：
-   *   - 单词视图：跳词条详情页。
-   *   - 状态视图：打开状态编辑弹层。
-   *   - 标签视图：打开标签编辑弹层。
-   * 对照 H5：word 模式 selectWord，status 模式 openStatusModal，tag 模式 openTagModal。
+   * 列表项点击（bindtap）。删除交互接入后分三种处置：
+   *   - 多选模式：toggle 勾选（不进详情、不滑）。
+   *   - 普通模式且本行处于「滑开 / 刚滑过」：仅收起左滑，吞掉本次点击（防误进详情）。
+   *   - 其余：统一进单词详情（三视图一致；状态/标签编辑改走左滑按钮）。
    */
   onTapItem(e: WechatMiniprogram.TouchEvent) {
     const id = Number(e.currentTarget.dataset.id)
     if (!id) return
-    const view = this.data.activeView
-    if (view === 'status') {
-      this._openStatusModal(id)
-    } else if (view === 'tag') {
-      this._openTagModal(id)
-    } else {
-      wx.navigateTo({
-        url: `/pages/word-detail/word-detail?id=${id}&type=${this._wordType()}`,
-        fail: () => wx.showToast({ title: '详情页开发中', icon: 'none' })
-      })
+    if (this.data.selectMode) {
+      this._toggleCheckedAt(
+        Number(e.currentTarget.dataset.g),
+        Number(e.currentTarget.dataset.r)
+      )
+      return
     }
+    // 有行处于「左滑打开」态时：
+    //   - 点的就是这一行（3 按钮外的内容区）→ 仅滑动收回，不进详情；
+    //   - 点的是别的行 → 收起打开的行 + 进被点行的详情。
+    // 真正左滑的手势位移很大、框架不会判成 tap，故无需额外的"滑动吞点击"标记。
+    if (this._openId) {
+      if (id === this._openId) {
+        this._closeAllSwipe()
+        return
+      }
+      this._closeAllSwipe()
+      this._openRow(id)
+      return
+    }
+    // 没有打开的行 → 直接进单词详情
+    this._openRow(id)
+  },
+
+  /** 统一进单词详情（三视图一致）。状态/标签编辑改走左滑按钮，不再按视图分派。 */
+  _openRow(id: number) {
+    wx.navigateTo({
+      url: `/pages/word-detail/word-detail?id=${id}&type=${this._wordType()}`,
+      fail: () => wx.showToast({ title: '详情页开发中', icon: 'none' })
+    })
   },
 
   /** 按 id 在当前展示的分组里找词条文本（弹层标题用） */
@@ -689,6 +772,274 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
       if (hit) return (hit.tags || []).map((t) => t.id)
     }
     return []
+  },
+
+  /* ===================== 删除交互：左滑/勾选行的二维定位与批量改写工具 ===================== */
+
+  /** 收起当前打开的行（点空白/进多选/切视图/点状态·标签·删除前调用）。
+   *  设 open=false → WXS 的 change:swopen 观察器在渲染层把它滑回 0。 */
+  _closeAllSwipe() {
+    if (!this._openId) return
+    const g = this._openG
+    const r = this._openR
+    const grp = this.data.letterGroups[g]
+    const cur = grp ? grp.rows[r] : undefined
+    if (cur && cur.open) {
+      this.setData({ [`letterGroups[${g}].rows[${r}].open`]: false })
+    }
+    this._openId = 0
+    this._openG = -1
+    this._openR = -1
+  },
+
+  /* ===================== 左滑露出三按钮：手势位移在 WXS 渲染层执行(见 swipe.wxs)，逻辑层只在松手后同步开/关 ===================== */
+
+  /**
+   * WXS end() 松手定开/关后 callMethod 回来（渲染层 → 逻辑层，一次，不逐帧）。
+   * 维持"同一时刻只一行打开"：若新开了一行，先把上一打开行 open 置 false（其 WXS 观察器自动滑回）。
+   * g/r 取自手势那一刻 dataset，对应当前渲染的 letterGroups，定向 setData 不整表回传。
+   */
+  onSwipeSettle(detail: { id: number; g: number; r: number; open: boolean }) {
+    const id = Number(detail.id)
+    const g = Number(detail.g)
+    const r = Number(detail.r)
+    const open = !!detail.open
+    if (open) {
+      // 先关上一行（存在且非本行）
+      if (this._openId && this._openId !== id) {
+        const pg = this.data.letterGroups[this._openG]
+        const pcur = pg ? pg.rows[this._openR] : undefined
+        if (pcur && pcur.open) {
+          this.setData({
+            [`letterGroups[${this._openG}].rows[${this._openR}].open`]: false
+          })
+        }
+      }
+      this.setData({ [`letterGroups[${g}].rows[${r}].open`]: true })
+      this._openId = id
+      this._openG = g
+      this._openR = r
+    } else {
+      this.setData({ [`letterGroups[${g}].rows[${r}].open`]: false })
+      if (this._openId === id) {
+        this._openId = 0
+        this._openG = -1
+        this._openR = -1
+      }
+    }
+  },
+
+  /** 点左滑露出的「状态」按钮（catchtap）：复用状态编辑弹层 */
+  onSwipeStatus(e: WechatMiniprogram.TouchEvent) {
+    const id = Number(e.currentTarget.dataset.id)
+    if (!id) return
+    this._closeAllSwipe()
+    this._openStatusModal(id)
+  },
+
+  /** 点左滑露出的「标签」按钮（catchtap）：复用标签编辑弹层 */
+  onSwipeTag(e: WechatMiniprogram.TouchEvent) {
+    const id = Number(e.currentTarget.dataset.id)
+    if (!id) return
+    this._closeAllSwipe()
+    this._openTagModal(id)
+  },
+
+  /** 点左滑露出的「删除」按钮（catchtap）：二次确认 → 按 kind 单删 → 就地移除 */
+  onSwipeDelete(e: WechatMiniprogram.TouchEvent) {
+    const id = Number(e.currentTarget.dataset.id)
+    if (!id) return
+    const phrase = this.data.activeKind === 'phrase'
+    wx.showModal({
+      title: '确认删除',
+      content: '确定删除这个' + (phrase ? '短语' : '单词') + '吗？删除后不可恢复。',
+      confirmText: '删除',
+      confirmColor: '#FF5A5F',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          if (phrase) await deletePhrase(id)
+          else await deleteWord(id)
+          this._removeFromList([id])
+          wx.showToast({ title: '已删除', icon: 'success' })
+        } catch (err) {
+          // request 层已统一 toast
+        }
+      }
+    })
+  },
+
+  /* ===================== 多选批删模式 ===================== */
+
+  /** 顶部「多选 / 取消」入口（同一按钮 toggle） */
+  onToggleSelectMode() {
+    if (this.data.selectMode) this.exitSelectMode()
+    else this.enterSelectMode()
+  },
+
+  /** 进入多选模式：收起全部左滑、清空勾选、归零计数 */
+  enterSelectMode() {
+    const groups = this.data.letterGroups.map((grp) => ({
+      letter: grp.letter,
+      rows: grp.rows.map((row) =>
+        row.open || row.checked
+          ? { ...row, open: false, checked: false }
+          : row
+      )
+    }))
+    this._openId = 0
+    this._openG = -1
+    this._openR = -1
+    this.setData({
+      letterGroups: groups,
+      selectMode: true,
+      selectedCount: 0,
+      allSelected: false
+    })
+    this._setTabBarHidden(true) // 多选底部操作条也会被 tabBar 盖住，进入多选即隐藏 tabBar
+  },
+
+  /** 退出多选模式：清空勾选 */
+  exitSelectMode() {
+    const groups = this.data.letterGroups.map((grp) => ({
+      letter: grp.letter,
+      rows: grp.rows.map((row) =>
+        row.checked ? { ...row, checked: false } : row
+      )
+    }))
+    this.setData({
+      letterGroups: groups,
+      selectMode: false,
+      selectedCount: 0,
+      allSelected: false
+    })
+    this._setTabBarHidden(false)
+  },
+
+  /** 按 id toggle 某行勾选（多选模式下点行调用） */
+  _toggleCheckedAt(g: number, r: number) {
+    const grp = this.data.letterGroups[g]
+    const cur = grp ? grp.rows[r] : undefined
+    if (!cur) return
+    // 数据路径 setData：只改这一行的 checked，不整表重传 → 大词库勾选不卡
+    this.setData({ [`letterGroups[${g}].rows[${r}].checked`]: !cur.checked })
+    this._syncSelection()
+  },
+
+  /** 遍历所有分组刷新底部计数 / 全选标志 */
+  _syncSelection() {
+    let total = 0
+    let checked = 0
+    for (const g of this.data.letterGroups) {
+      for (const r of g.rows) {
+        total++
+        if (r.checked) checked++
+      }
+    }
+    this.setData({
+      selectedCount: checked,
+      allSelected: total > 0 && checked === total
+    })
+  },
+
+  /** 当前勾选的 id 列表 */
+  _selectedIds(): number[] {
+    const ids: number[] = []
+    for (const g of this.data.letterGroups) {
+      for (const r of g.rows) {
+        if (r.checked) ids.push(r.id)
+      }
+    }
+    return ids
+  },
+
+  /** 全选 / 取消全选切换 */
+  onToggleSelectAll() {
+    const target = !this.data.allSelected
+    const groups = this.data.letterGroups.map((grp) => ({
+      letter: grp.letter,
+      rows: grp.rows.map((row) =>
+        row.checked === target ? row : { ...row, checked: target }
+      )
+    }))
+    this.setData({ letterGroups: groups })
+    this._syncSelection()
+  },
+
+  /** 批量删除：二次确认 → 按 kind 批删 → 就地移除 + 退出多选 */
+  onBatchDelete() {
+    const ids = this._selectedIds()
+    if (!ids.length) return
+    const phrase = this.data.activeKind === 'phrase'
+    wx.showModal({
+      title: '确认删除',
+      content:
+        '确定删除选中的 ' + ids.length + ' 个' +
+        (phrase ? '短语' : '单词') + '吗？删除后不可恢复。',
+      confirmText: '删除',
+      confirmColor: '#FF5A5F',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          const n = phrase
+            ? await batchDeletePhrase(ids)
+            : await batchDeleteWord(ids)
+          this._removeFromList(ids)
+          this.exitSelectMode()
+          wx.showToast({ title: '已删除 ' + n + ' 个', icon: 'success' })
+        } catch (err) {
+          // 已 toast
+        }
+      }
+    })
+  },
+
+  /**
+   * 删除成功后就地移除若干 id：
+   *   1) 从内存真源 _rows 删（保证三视图切换/重渲不再出现已删项）；
+   *   2) 从当前 letterGroups 删（即时反映，免整页重渲抖动）；
+   *   3) 同步 total / 空态；若当前在多选态还同步底部计数。
+   * 标签 AND 筛选态下 letterGroups 来自 listWordsByTags（不源自 _rows），同样直接按 id 过滤即可。
+   */
+  _removeFromList(ids: number[]) {
+    if (!ids || !ids.length) return
+    // 列表行索引会因删除整体前移 → 清掉左滑打开追踪，防 _openG/_openR 指向错行（防御性）
+    this._openId = 0
+    this._openG = -1
+    this._openR = -1
+    const removeSet: Record<number, boolean> = {}
+    for (const id of ids) removeSet[id] = true
+    // 真源 _rows 同步删
+    this._rows = this._rows.filter((r: Row) => !removeSet[r.id])
+    // 当前展示的分组同步删（删空的字母组整组移除）
+    const groups: LetterGroup[] = []
+    for (const grp of this.data.letterGroups) {
+      const rows = grp.rows.filter((row) => !removeSet[row.id])
+      if (rows.length) groups.push({ letter: grp.letter, rows })
+    }
+    const letters = groups.map((g) => g.letter)
+    const empty = groups.length === 0
+    // 空态文案：标签 AND 筛选态用「没有同时拥有这些标签的词条」，否则按是否在搜索区分
+    const inTagFilter =
+      this.data.activeView === 'tag' && this.data.selectedFilterIds.length > 0
+    const emptyText = inTagFilter
+      ? '没有同时拥有这些标签的词条'
+      : (this.data.keyword ? '没有匹配的词条' : '词库还是空的')
+    this.setData({
+      letterGroups: groups,
+      indexLetters: letters,
+      activeLetter: letters.indexOf(this.data.activeLetter) >= 0
+        ? this.data.activeLetter
+        : (letters[0] || ''),
+      total: this._rows.length,
+      empty,
+      emptyText
+    })
+    // 标签 AND 筛选态下「· M 条」随删除变化，刷新 summary（其余视图无 summary 影响）
+    if (this.data.activeView === 'tag' && this.data.selectedFilterIds.length > 0) {
+      this._updateFilterSummary()
+    }
+    if (this.data.selectMode) this._syncSelection()
   },
 
   /* ===================== 状态编辑弹层（对照 H5 StatusEditModal） ===================== */
@@ -710,10 +1061,19 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
       statusSubmitting: false,
       editWord: this._findWord(id)
     })
+    this._setTabBarHidden(true)
   },
 
   closeStatusEdit() {
     this.setData({ statusVisible: false })
+    this._setTabBarHidden(false)
+  },
+
+  /** 隐藏/显示自定义 tabBar：弹层打开时隐藏，避免它盖住弹层底部按钮（框架 tabBar 在独立层，z-index 盖不住） */
+  _setTabBarHidden(hidden: boolean) {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar()!.setData({ hidden })
+    }
   },
 
   onStatusPick(e: WechatMiniprogram.TouchEvent) {
@@ -741,6 +1101,7 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
       )
       wx.showToast({ title: '状态已更新', icon: 'success' })
       this.setData({ statusVisible: false })
+      this._setTabBarHidden(false)
       this._renderList()
     } catch (e) {
       // request 层已统一 toast
@@ -763,6 +1124,7 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
       tagNewColor: PALETTE[0],
       editWord: this._findWord(id)
     })
+    this._setTabBarHidden(true)
     if (!this._allTagsLoaded) {
       wx.showLoading({ title: '加载中', mask: false })
       await this._ensureAllTags()
@@ -773,6 +1135,7 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
 
   closeTagEdit() {
     this.setData({ tagVisible: false })
+    this._setTabBarHidden(false)
   },
 
   /** 用 _allTags + 选中 id 集合预算编辑弹层 chip（含 selected / 选中态内联色） */
@@ -882,6 +1245,7 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
       )
       wx.showToast({ title: '标签已更新', icon: 'success' })
       this.setData({ tagVisible: false })
+      this._setTabBarHidden(false)
       // 若当前在筛选态，标签变了可能影响命中 → 重跑筛选；否则重渲全量
       this._renderList(true)
     } catch (e) {
@@ -933,16 +1297,19 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
         : it
     )
     this.setData({ actionItems: items, actionVisible: true })
+    this._setTabBarHidden(true)
   },
 
   closeAction() {
     this.setData({ actionVisible: false })
+    this._setTabBarHidden(false)
   },
 
   /** 菜单项点击分派：add 跳新增页 / import 走聊天文件导入流 / 其余跳各自功能页 */
   onActionItem(e: WechatMiniprogram.TouchEvent) {
     const value = e.currentTarget.dataset.value as ActionValue
     this.setData({ actionVisible: false })
+    this._setTabBarHidden(false)
     if (value === 'add') {
       wx.navigateTo({ url: `/pages/word-add/word-add?type=${this._wordType()}` })
       return
@@ -1001,5 +1368,13 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
     this._allTagsLoaded = false
     await this.reload()
     wx.stopPullDownRefresh()
+  },
+
+  /** 右上角「···」→ 转发给朋友 */
+  onShareAppMessage() {
+    return {
+      title: '单词记忆助手 · 我的英语词库',
+      path: '/pages/home/home'
+    }
   }
 })

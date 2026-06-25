@@ -305,10 +305,11 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
       const examples = parseExamples(
         (p.example || []) as unknown as string[]
       ).map((e) => ({ en: e.en, zh: e.zh }))
+      const posCode = p.pos == null ? 0 : p.pos
       return {
         id: p.id || 0,
-        sw: POS_SW_MAP[p.pos ?? 0] || POS_SW_MAP[0],
-        cn: POS_CN_MAP[p.pos ?? 0] || POS_CN_MAP[0],
+        sw: POS_SW_MAP[posCode] || POS_SW_MAP[0],
+        cn: POS_CN_MAP[posCode] || POS_CN_MAP[0],
         translation: p.translation || '',
         exchanges,
         examples,
@@ -822,5 +823,13 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
   },
 
   // 弹层面板内部点击占位（阻止冒泡到蒙层关闭）
-  noop() {}
+  noop() {},
+
+  /** 右上角「···」→ 转发给朋友 */
+  onShareAppMessage() {
+    return {
+      title: '单词记忆助手 · 一起来背单词',
+      path: '/pages/home/home'
+    }
+  }
 })

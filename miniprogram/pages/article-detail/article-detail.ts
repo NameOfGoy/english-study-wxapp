@@ -33,5 +33,13 @@ Page<PageData, WechatMiniprogram.IAnyObject>({
     } catch (e) {
       this.setData({ loading: false, loadError: true })
     }
+  },
+
+  /** 右上角「···」→ 转发给朋友 */
+  onShareAppMessage() {
+    return {
+      title: '单词记忆助手 · 读短文记单词',
+      path: '/pages/home/home'
+    }
   }
 })

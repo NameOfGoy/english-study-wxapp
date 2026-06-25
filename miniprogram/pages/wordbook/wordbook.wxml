@@ -5,11 +5,17 @@
        状态视图 → 每条带状态角标(status>0 排前)，点词条开「状态编辑层」；
        标签视图 → 每条挂标签 chip(无则"暂无标签")，点词条开「标签编辑层」，顶部可折叠「按标签筛选」面板。
      「+」浮动按钮 → wx.showActionSheet 五项菜单。弹层自绘 fixed 蒙层，蓝色活力风复用 app.wxss。 -->
-<view class="page page--tab wb">
+<!-- 行左滑手势在渲染层执行（不过桥、跟手丝滑），见 ./swipe.wxs -->
+<wxs module="sw" src="./swipe.wxs"></wxs>
+<view class="page page--tab wb {{selectMode ? 'wb--selectmode' : ''}}">
 
-  <!-- 顶部搜索框（前缀搜） -->
-  <view class="search-bar">
-    <text>🔍</text>
+  <!-- 顶部搜索框：左侧 词/短语 切换 + 前缀搜 -->
+  <view class="search-bar wb-search">
+    <view class="wb-kind" bindtap="onToggleKind">
+      <text class="wb-kind__label">{{activeKind === 'phrase' ? '短语' : '词'}}</text>
+      <text class="wb-kind__arrow">▾</text>
+    </view>
+    <text class="wb-search__icon">🔍</text>
     <input
       class="search-bar__input"
       placeholder="{{activeKind === 'phrase' ? '搜索短语' : '搜索单词'}}"
@@ -19,28 +25,24 @@
     />
   </view>
 
-  <!-- 工具栏：左 三视图切换（单词/状态/标签），右 词/短语切换 -->
-  <view class="row row--between wb-tools">
-    <view class="row gap-12">
+  <!-- 视图下划线 Tab（列表/状态/标签）+ 右侧 总数 & 多选 -->
+  <view class="wb-viewtabs">
+    <view class="wb-viewtabs__list">
       <view
         wx:for="{{views}}"
         wx:key="key"
-        class="pill {{activeView === item.key ? 'pill--active' : ''}}"
+        class="wb-tab {{activeView === item.key ? 'wb-tab--active' : ''}}"
         data-key="{{item.key}}"
         bindtap="onSwitchView"
       >{{item.label}}</view>
     </view>
-    <view class="row gap-12">
+    <view class="wb-viewtabs__right">
+      <text class="wb-count">共 {{total}}</text>
       <view
-        class="pill {{activeKind === 'word' ? 'pill--active' : ''}}"
-        data-kind="word"
-        bindtap="onSwitchKind"
-      >词</view>
-      <view
-        class="pill {{activeKind === 'phrase' ? 'pill--active' : ''}}"
-        data-kind="phrase"
-        bindtap="onSwitchKind"
-      >短语</view>
+        wx:if="{{!empty}}"
+        class="wb-selbtn {{selectMode ? 'wb-selbtn--on' : ''}}"
+        bindtap="onToggleSelectMode"
+      >{{selectMode ? '取消' : '多选'}}</view>
     </view>
   </view>
 
@@ -77,11 +79,6 @@
     </view>
   </view>
 
-  <!-- 列表标题（总数；标签筛选生效时 summary 已在面板里给计数，这里仅标识 kind） -->
-  <view class="section-title">
-    📚 {{activeKind === 'phrase' ? '短语' : '单词'}}（{{total}}）
-  </view>
-
   <!-- ============ 列表区：三视图共用「字母分组 + 右侧字母条」 ============ -->
   <!-- 标签视图未选筛选时显示全部；选了则显示 AND 结果。状态视图组内 status 优先(JS 已排序)。 -->
   <view class="wb-az">
@@ -107,33 +104,67 @@
         </view>
 
         <view class="card wb-list">
+          <!-- 每行：外壳承载左滑三按钮区 + 可滑动/可勾选的内容层。
+               g/r = 分组下标/组内行下标，供手势状态机二维定位。 -->
           <view
-            class="wb-item {{activeView === 'tag' ? 'wb-item--tag' : ''}}"
+            class="wb-row"
             wx:for="{{item.rows}}"
             wx:for-item="row"
+            wx:for-index="ri"
             wx:key="id"
-            data-id="{{row.id}}"
-            bindtap="onTapItem"
-            hover-class="wb-item--hover"
           >
-            <view class="wb-item__main">
-              <text class="wb-item__word">{{row.word}}</text>
-              <!-- 标签视图：词下方挂它自己的标签 chip（无则"暂无标签"） -->
-              <view wx:if="{{activeView === 'tag'}}" class="wb-item__tags">
-                <view
-                  wx:for="{{row.tags}}"
-                  wx:for-item="tg"
-                  wx:key="id"
-                  class="wb-minitag"
-                  style="background: {{tg.style}}"
-                >{{tg.name}}</view>
-                <text wx:if="{{!row.tags.length}}" class="wb-item__notags">暂无标签</text>
-              </view>
+            <!-- 左滑露出的三按钮区：常驻底层（普通模式），内容层滑过盖住；多选态不挂 -->
+            <view
+              wx:if="{{!selectMode}}"
+              class="wb-row__actions"
+              style="width: {{actionsWidth}}rpx"
+            >
+              <view class="wb-row__act wb-row__act--status" catchtap="onSwipeStatus" data-id="{{row.id}}">状态</view>
+              <view class="wb-row__act wb-row__act--tag" catchtap="onSwipeTag" data-id="{{row.id}}">标签</view>
+              <view class="wb-row__act wb-row__act--del" catchtap="onSwipeDelete" data-id="{{row.id}}">删除</view>
             </view>
-            <view class="row gap-12">
-              <!-- 状态角标：仅状态视图显示（切回单词/标签视图不带，避免 _rows 里残留的 statusCls 串视图） -->
-              <view wx:if="{{activeView === 'status' && row.statusCls}}" class="badge-status {{row.statusCls}}">{{row.statusText}}</view>
-              <text class="wb-item__arrow">›</text>
+
+            <!-- 内容层：左滑 transform 由 WXS 在渲染层直接驱动（不过桥）；swopen 变化经 change:swopen 同步开/关 -->
+            <view
+              class="wb-item {{activeView === 'tag' ? 'wb-item--tag' : ''}}"
+              swopen="{{row.open}}"
+              change:swopen="{{sw.observe}}"
+              data-id="{{row.id}}"
+              data-g="{{index}}"
+              data-r="{{ri}}"
+              data-w="{{actionsWidthPx}}"
+              data-sel="{{selectMode}}"
+              bindtap="onTapItem"
+              bindtouchstart="{{sw.start}}"
+              bindtouchmove="{{sw.move}}"
+              bindtouchend="{{sw.end}}"
+              bindtouchcancel="{{sw.end}}"
+              hover-class="{{selectMode ? '' : 'wb-item--hover'}}"
+            >
+              <!-- 多选态前置勾选圈 -->
+              <view wx:if="{{selectMode}}" class="wb-check {{row.checked ? 'wb-check--on' : ''}}">
+                <text wx:if="{{row.checked}}" class="wb-check__tick">✓</text>
+              </view>
+
+              <view class="wb-item__main">
+                <text class="wb-item__word">{{row.word}}</text>
+                <!-- 标签视图：词下方挂它自己的标签 chip（无则"暂无标签"） -->
+                <view wx:if="{{activeView === 'tag'}}" class="wb-item__tags">
+                  <view
+                    wx:for="{{row.tags}}"
+                    wx:for-item="tg"
+                    wx:key="id"
+                    class="wb-minitag"
+                    style="background: {{tg.style}}"
+                  >{{tg.name}}</view>
+                  <text wx:if="{{!row.tags.length}}" class="wb-item__notags">暂无标签</text>
+                </view>
+              </view>
+              <view class="row gap-12">
+                <!-- 状态角标：仅状态视图显示（切回单词/标签视图不带，避免 _rows 里残留的 statusCls 串视图） -->
+                <view wx:if="{{activeView === 'status' && row.statusCls}}" class="badge-status {{row.statusCls}}">{{row.statusText}}</view>
+                <text wx:if="{{!selectMode}}" class="wb-item__arrow">›</text>
+              </view>
             </view>
           </view>
         </view>
@@ -158,8 +189,20 @@
     <text class="wb-empty__text">{{emptyText}}</text>
   </view>
 
-  <!-- ============ 「+」浮动按钮 → 操作菜单 ============ -->
-  <view class="wb-fab" bindtap="onTapFab" hover-class="wb-fab--hover">＋</view>
+  <!-- ============ 「+」浮动按钮 → 操作菜单（多选态隐藏，让位底部操作条） ============ -->
+  <view wx:if="{{!selectMode}}" class="wb-fab" bindtap="onTapFab" hover-class="wb-fab--hover">＋</view>
+
+  <!-- ============ 底部固定操作条（仅多选态）：全选 / 已选 N / 删除 ============ -->
+  <view wx:if="{{selectMode}}" class="wb-actionbar">
+    <view class="wb-actionbar__all" bindtap="onToggleSelectAll">
+      {{allSelected ? '取消全选' : '全选'}}
+    </view>
+    <text class="wb-actionbar__count">已选 {{selectedCount}} 个</text>
+    <view
+      class="wb-actionbar__del {{selectedCount === 0 ? 'wb-actionbar__del--disabled' : ''}}"
+      bindtap="onBatchDelete"
+    >删除</view>
+  </view>
 
 </view>
 

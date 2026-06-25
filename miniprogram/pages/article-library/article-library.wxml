@@ -1,6 +1,7 @@
 <!-- pages/article-library/article-library.wxml —— 收录文章库（普通页）
-     复刻 H5 ArticleLibrary.vue：搜索 + 可折叠标签筛选 + 分页列表。 -->
-<view class="page al">
+     复刻 H5 ArticleLibrary.vue：搜索 + 可折叠标签筛选 + 分页列表。
+     删除交互：普通态左滑单删 / 多选态批删（底部操作条）。 -->
+<view class="page al {{selectMode ? 'al--selectmode' : ''}}">
 
   <!-- 搜索 + 标签筛选 -->
   <view class="al-filters">
@@ -37,28 +38,70 @@
     </view>
   </view>
 
+  <!-- 列表操作栏：右侧多选 / 取消入口（无数据时不展示） -->
+  <view wx:if="{{list.length > 0}}" class="al-listbar">
+    <text class="al-listbar__hint">{{selectMode ? '点条目勾选' : ''}}</text>
+    <view
+      wx:if="{{selectMode}}"
+      class="al-listbar__btn"
+      bindtap="exitSelectMode"
+    >取消</view>
+    <view
+      wx:else
+      class="al-listbar__btn"
+      bindtap="enterSelectMode"
+    >多选</view>
+  </view>
+
   <!-- 列表 -->
   <view class="al-list">
     <view
       wx:for="{{list}}"
       wx:key="id"
       class="al-row"
-      data-id="{{item.id}}"
-      bindtap="openDetail"
     >
-      <view class="al-row__title">
-        {{item.titleMain}}<text wx:if="{{item.titleSub}}" class="al-row__title-zh">（{{item.titleSub}}）</text>
+      <!-- 右侧绝对定位的删除按钮（左滑露出）；多选态不显示 -->
+      <view
+        wx:if="{{!selectMode}}"
+        class="al-row__action"
+        style="width: {{deleteWidth}}rpx"
+        catchtap="onSwipeDelete"
+        data-id="{{item.id}}"
+      >删除</view>
+
+      <!-- 内容层：transform 实现左滑位移；滑动时去过渡防拖影 -->
+      <view
+        class="al-row__content {{swiping ? 'al-row__content--swiping' : ''}}"
+        style="transform: translateX({{item.offsetX}}rpx)"
+        data-index="{{index}}"
+        data-id="{{item.id}}"
+        bindtap="onRowTap"
+        bindtouchstart="onRowTouchStart"
+        bindtouchmove="onRowTouchMove"
+        bindtouchend="onRowTouchEnd"
+        bindtouchcancel="onRowTouchEnd"
+      >
+        <!-- 多选态前置勾选框 -->
+        <view wx:if="{{selectMode}}" class="al-check {{item.checked ? 'al-check--on' : ''}}">
+          <text wx:if="{{item.checked}}" class="al-check__tick">✓</text>
+        </view>
+
+        <view class="al-row__main">
+          <view class="al-row__title">
+            {{item.titleMain}}<text wx:if="{{item.titleSub}}" class="al-row__title-zh">（{{item.titleSub}}）</text>
+          </view>
+          <view wx:if="{{item.hasTags}}" class="al-row__tags">
+            <text
+              wx:for="{{item.tags}}"
+              wx:for-item="t"
+              wx:key="tag_id"
+              class="al-tag"
+              style="background: {{t.style || '#1989fa'}}"
+            >{{t.name}}</text>
+          </view>
+          <view wx:if="{{item.hasWords}}" class="al-row__words">{{item.wordsText}}</view>
+        </view>
       </view>
-      <view wx:if="{{item.hasTags}}" class="al-row__tags">
-        <text
-          wx:for="{{item.tags}}"
-          wx:for-item="t"
-          wx:key="tag_id"
-          class="al-tag"
-          style="background: {{t.style || '#1989fa'}}"
-        >{{t.name}}</text>
-      </view>
-      <view wx:if="{{item.hasWords}}" class="al-row__words">{{item.wordsText}}</view>
     </view>
 
     <!-- 加载/到底/空态 -->
@@ -68,6 +111,18 @@
       <text class="al-empty__text">{{emptyText}}</text>
     </view>
     <view wx:elif="{{finished}}" class="al-foot">没有更多了</view>
+  </view>
+
+  <!-- 底部固定操作条（仅多选态） -->
+  <view wx:if="{{selectMode}}" class="al-actionbar">
+    <view class="al-actionbar__all" bindtap="onToggleSelectAll">
+      {{allSelected ? '取消全选' : '全选'}}
+    </view>
+    <text class="al-actionbar__count">已选 {{selectedCount}} 篇</text>
+    <view
+      class="al-actionbar__del {{selectedCount === 0 ? 'al-actionbar__del--disabled' : ''}}"
+      bindtap="onBatchDelete"
+    >删除</view>
   </view>
 
 </view>

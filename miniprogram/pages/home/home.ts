@@ -160,5 +160,20 @@ Page({
     if (path) {
       wx.navigateTo({ url: path })
     }
+  },
+
+  /** 右上角「···」→ 转发给朋友（朋友点开落首页，游客模式可直接浏览） */
+  onShareAppMessage() {
+    return {
+      title: '单词记忆助手 · 每天进步一点点',
+      path: '/pages/home/home'
+    }
+  },
+
+  /** 分享到朋友圈 */
+  onShareTimeline() {
+    return {
+      title: '单词记忆助手 · 每天进步一点点'
+    }
   }
 })

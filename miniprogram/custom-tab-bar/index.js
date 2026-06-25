@@ -1,6 +1,8 @@
 Component({
   data: {
     selected: 0,
+    // 弹层/底部操作条打开时由页面置 true，临时隐藏 tabBar（避免盖住弹层底部）
+    hidden: false,
     color: '#9AA3AF',
     selectedColor: '#3DA5F4',
     list: [

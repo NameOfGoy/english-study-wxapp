@@ -181,3 +181,43 @@
   font-size: 30rpx;
   color: var(--text-3);
 }
+
+/* ============ 一次性「设置账号密码」入口 banner ============ */
+/* 复用 .card（圆角/阴影/内边距），改为图标 + 文案列 + 箭头的横向排布 */
+.setup-banner {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+.setup-banner:active {
+  opacity: 0.9;
+}
+.setup-banner__icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  background: var(--primary-soft, rgba(25, 137, 250, 0.12));
+}
+.setup-banner__title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+.setup-banner__desc {
+  margin-top: 8rpx;
+  line-height: 1.4;
+}
+
+/* 弹层顶部提示条：弱化灰字 + 浅底，强调"仅可设置一次" */
+.setup-tip {
+  padding: 16rpx 20rpx;
+  margin-bottom: 8rpx;
+  border-radius: var(--r-sm, 12rpx);
+  background: var(--primary-soft, rgba(25, 137, 250, 0.1));
+  line-height: 1.5;
+}

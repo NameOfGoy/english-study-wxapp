@@ -72,3 +72,19 @@ export function updateUser(id: number, info: UserInfo): Promise<void> {
     data: { data: info }
   }).then(() => undefined)
 }
+
+/**
+ * 首次设置账号密码：微信自动注册(随机 wx_ 账号 + 占位密码)的用户专用，
+ * 把随机账号换成自定义账号并设置真实密码。后端仅在占位态放行、且账号锁成"已改"，
+ * 故仅可设置一次。需要 token。成功后调用方应刷新本地缓存的 account。
+ */
+export function setupCredentials(
+  account: string,
+  password: string
+): Promise<void> {
+  return request<BaseReply>({
+    url: '/api/v1/user/setup-credentials',
+    method: 'POST',
+    data: { account, password }
+  }).then(() => undefined)
+}

@@ -1,5 +1,5 @@
 <!-- login.wxml —— 微信登录页（自动登录 + 未关联弹层选关联/注册 + 账号登录兜底） -->
-<!-- 状态机 mode: 'auto' | 'choice' | 'link' | 'manual'，复用全局 .page/.card/.btn-primary/.btn-ghost/.muted -->
+<!-- 状态机 mode: 'auto' | 'choice' | 'link' | 'manual' | 'profile'，复用全局 .page/.card/.btn-primary/.btn-ghost/.muted -->
 <view class="page login">
   <!-- 顶部 logo + 标题（各 mode 公用） -->
   <view class="login__brand">
@@ -16,24 +16,22 @@
     <view class="login__auto-text">微信登录中…</view>
   </view>
 
-  <!-- ===== mode=choice：该微信未关联账号 ===== -->
+  <!-- ===== mode=choice：该微信未注册 → 微信登录(自动建号) / 绑定已有账号 ===== -->
   <view wx:elif="{{mode === 'choice'}}" class="card login__form login__choice">
-    <view class="login__choice-title">该微信还没有账号</view>
-    <view class="login__choice-tip muted">你可以关联已有账号，或直接注册一个新账号</view>
+    <view class="login__choice-title">欢迎使用</view>
+    <view class="login__choice-tip muted">用微信登录将自动为你创建账号；已有账号可绑定到此微信</view>
 
     <button
       class="btn-primary login__submit"
-      bindtap="goLink"
-    >关联已有账号</button>
-
-    <button
-      class="btn-ghost login__choice-register"
       loading="{{submitting}}"
       disabled="{{submitting}}"
       bindtap="onRegister"
-    >注册新账号</button>
+    >微信登录</button>
 
-    <view class="login__alt" bindtap="goManual">用账号密码登录 ›</view>
+    <button
+      class="btn-ghost login__choice-register"
+      bindtap="goLink"
+    >绑定已有账号</button>
   </view>
 
   <!-- ===== mode=link：关联已有账号 ===== -->
@@ -83,6 +81,59 @@
     >确认关联并登录</button>
 
     <view class="login__alt" bindtap="backToChoice">‹ 返回</view>
+  </view>
+
+  <!-- ===== mode=profile：微信自动注册成功 → 完善资料（头像昵称填写能力） ===== -->
+  <view wx:elif="{{mode === 'profile'}}" class="card login__form login__profile">
+    <view class="login__choice-title">完善资料</view>
+    <view class="login__choice-tip muted">选个头像、填个昵称（都可用微信的），也可跳过</view>
+
+    <!-- 头像：chooseAvatar 按钮，弹框最上方就是用户的微信头像 -->
+    <button
+      class="login__avatar-btn"
+      open-type="chooseAvatar"
+      bind:chooseavatar="onChooseAvatar"
+    >
+      <!-- button 仅作点击容器（透明无样式），真正的圆形头像放内层 view —— 与「我的」头像同款，杜绝 button 默认样式撑成椭圆 -->
+      <view class="login__avatar">
+        <image
+          wx:if="{{profileAvatar}}"
+          class="login__avatar-img"
+          src="{{profileAvatar}}"
+          mode="aspectFill"
+        />
+        <view wx:else class="login__avatar-ph">
+          <text class="login__avatar-ph-plus">＋</text>
+          <text class="login__avatar-ph-txt">选择头像</text>
+        </view>
+      </view>
+    </button>
+
+    <!-- 昵称：type=nickname，点进去微信会提示「使用微信昵称」 -->
+    <view class="login__field">
+      <text class="login__label">昵称</text>
+      <view class="login__input-wrap">
+        <text class="login__icon">😀</text>
+        <input
+          class="login__input"
+          type="nickname"
+          placeholder="点这里用微信昵称"
+          placeholder-class="login__placeholder"
+          value="{{profileNickname}}"
+          bindinput="onNicknameInput"
+          bindblur="onNicknameInput"
+        />
+      </view>
+    </view>
+
+    <button
+      class="btn-primary login__submit"
+      loading="{{profileSaving}}"
+      disabled="{{profileSaving}}"
+      bindtap="onProfileDone"
+    >完成</button>
+
+    <view class="login__alt" bindtap="onProfileSkip">跳过</view>
   </view>
 
   <!-- ===== mode=manual：账号密码登录 ===== -->

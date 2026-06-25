@@ -242,6 +242,20 @@ export function deleteWord(id: number): Promise<void> {
   }).then(() => undefined)
 }
 
+/** batch-delete 响应：deleted（实际删除条数）在顶层（与 article batch-delete 同形） */
+interface BatchDeleteReply extends BaseReply {
+  deleted: number
+}
+
+/** 批量删除单词。需要 token。POST word/batch-delete，body { ids }。返回实际删除条数。 */
+export function batchDeleteWord(ids: number[]): Promise<number> {
+  return request<BatchDeleteReply>({
+    url: '/api/v1/dictionary/word/batch-delete',
+    method: 'POST',
+    data: { ids }
+  }).then((res) => res.deleted)
+}
+
 /**
  * 批量更新单词释义（按 word_pos_id）。需要 token。POST word/translation/update。
  * body { items: [{ word_pos_id, translation }] }。成功 resolve(void)。
@@ -340,6 +354,15 @@ export function deletePhrase(id: number): Promise<void> {
     method: 'DELETE',
     data: { id }
   }).then(() => undefined)
+}
+
+/** 批量删除短语。需要 token。POST phrase/batch-delete，body { ids }。返回实际删除条数。 */
+export function batchDeletePhrase(ids: number[]): Promise<number> {
+  return request<BatchDeleteReply>({
+    url: '/api/v1/dictionary/phrase/batch-delete',
+    method: 'POST',
+    data: { ids }
+  }).then((res) => res.deleted)
 }
 
 /* ============ 状态（学习/复习/强化/完成） ============ */

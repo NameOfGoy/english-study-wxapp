@@ -62,7 +62,8 @@ interface PageData {
 
 // 新建一个默认词性块（词性取第一项，释义空）
 function blankPosBlock(): PosBlock {
-  return { pos: POS_OPTIONS[0]?.value ?? 1, translation: '' }
+  const first = POS_OPTIONS[0]
+  return { pos: first ? first.value : 1, translation: '' }
 }
 
 Page<PageData, WechatMiniprogram.IAnyObject>({

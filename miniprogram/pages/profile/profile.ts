@@ -7,12 +7,20 @@
 //   ② "个人资料"设置项 → 弹底部编辑层（昵称/手机/邮箱可改，账号只读展示）→ 保存调 updateUser → 刷新。
 //   ③ "标签管理"设置项 → navigateTo /pages/tag-manage/tag-manage。
 //   其余设置项（导入历史/关于）保留 toast 占位。
-import { getUserInfo, setUserInfo, clearToken, clearUserInfo } from '../../utils/auth'
-import { getUser, updateUser } from '../../services/user'
+import { getUserInfo, setUserInfo, isGuest, ROLE_GUEST } from '../../utils/auth'
+import { getUser, updateUser, setupCredentials } from '../../services/user'
 import { getDashboard } from '../../services/dashboard'
 import { chooseAndUploadAvatar } from '../../services/file'
 import { resolveAsset } from '../../utils/asset'
+import { validatePassword } from '../../utils/password'
 import type { UserInfo, DashboardData } from '../../services/types'
+
+// 微信自动注册账号的保留前缀：account 形如 wx_xxxx 即"占位账号"，
+// 表示该用户由微信一键登录自动建号、尚未设置真实账号密码（密码为后端占位值）。
+// 据此在「我的」页显示一次性的「设置账号密码」入口；设置成功后 account 不再以 wx_ 开头，入口随之消失。
+function isWxAutoAccount(info: UserInfo | null): boolean {
+  return !!(info && info.account && info.account.indexOf('wx_') === 0)
+}
 
 // 设置项静态元信息（点击行为按 id 分派：profile=编辑层 / tags=跳转 / 其余=toast）
 interface SettingEntry {
@@ -54,6 +62,13 @@ interface EditForm {
   email: string
 }
 
+// 「设置账号密码」弹层的表单结构（一次性：自定义账号 + 新密码 + 确认）
+interface SetupForm {
+  account: string
+  password: string
+  confirm: string
+}
+
 // 由 UserInfo + (可选)DashboardData 组装视图
 function buildProfile(
   info: UserInfo | null,
@@ -69,7 +84,12 @@ function buildProfile(
   ]
 
   return {
-    nickname: info && info.name ? info.name : '未登录',
+    nickname:
+      info && info.role === ROLE_GUEST
+        ? '游客'
+        : info && info.name
+          ? info.name
+          : '未登录',
     avatarUrl: info ? resolveAsset(info.avatar) : '',
     avatarEmoji: '🦊',
     avatarError: false,
@@ -82,12 +102,19 @@ function buildProfile(
 Page({
   data: {
     profile: buildProfile(getUserInfo()) as ProfileView,
+    // 游客只读身份 → 显示「登录/注册」入口、拦截写操作入口
+    isGuest: isGuest(),
     // 头像上传锁：上传中禁止重复点头像
     avatarUploading: false,
     // 编辑层显隐 + 表单 + 保存锁
     editVisible: false,
     editSaving: false,
-    editForm: { name: '', account: '', phone: '', email: '' } as EditForm
+    editForm: { name: '', account: '', phone: '', email: '' } as EditForm,
+    // 「设置账号密码」入口：仅微信占位账号(wx_ 前缀)显示，一次性
+    needSetup: isWxAutoAccount(getUserInfo()),
+    setupVisible: false,
+    setupSaving: false,
+    setupForm: { account: '', password: '', confirm: '' } as SetupForm
   },
 
   onShow() {
@@ -96,19 +123,28 @@ Page({
       this.getTabBar()!.setData({ selected: 3 })
     }
     // 先用本地缓存渲染，再异步刷新
-    this.setData({ profile: buildProfile(getUserInfo()) })
+    const cachedInfo = getUserInfo()
+    this.setData({
+      profile: buildProfile(cachedInfo),
+      needSetup: isWxAutoAccount(cachedInfo),
+      isGuest: !!(cachedInfo && cachedInfo.role === ROLE_GUEST)
+    })
     this.refresh()
   },
 
   // 拉取最新用户信息 + dashboard 统计
   async refresh() {
     const cached = getUserInfo()
+    // 游客身份由 token 的 role 决定(缓存里 role=2)：不要用 getUser 刷新覆盖
+    // （共享游客账号的 DB 行 role 可能是 0，会把游客误判成正式用户、登录入口消失）。
+    // 游客只刷 dashboard(演示统计)。
+    const guest = !!(cached && cached.role === ROLE_GUEST)
     wx.showLoading({ title: '加载中', mask: true })
     try {
-      // 并行拉取：用户详情(若有 id) + dashboard 统计
+      // 并行拉取：用户详情(若有 id 且非游客) + dashboard 统计
       // 注意 id 用 != null 判断：超管 sssadmin 的 user id 就是 0，truthy 判断会把它当成未登录
       const userP: Promise<UserInfo | null> =
-        cached && cached.id != null
+        !guest && cached && cached.id != null
           ? getUser(cached.id).catch(() => cached)
           : Promise.resolve(cached)
       const dashP: Promise<DashboardData | undefined> = getDashboard().catch(
@@ -117,11 +153,15 @@ Page({
 
       const [user, dash] = await Promise.all([userP, dashP])
 
-      // 用户信息有更新则回写缓存
-      if (user) {
+      // 用户信息有更新则回写缓存（游客不回写，保持 role=2）
+      if (user && !guest) {
         setUserInfo(user)
       }
-      this.setData({ profile: buildProfile(user, dash) })
+      this.setData({
+        profile: buildProfile(user, dash),
+        needSetup: isWxAutoAccount(user),
+        isGuest: guest
+      })
     } catch (e) {
       // request.ts 已统一 toast；这里保留已渲染的缓存视图，不再重复提示
     } finally {
@@ -134,10 +174,19 @@ Page({
     this.setData({ 'profile.avatarError': true })
   },
 
+  // 游客 → 去登录/注册（login 页 choice 模式，不静默自动登录）
+  goLoginRegister() {
+    wx.navigateTo({ url: '/pages/login/login?from=guest' })
+  },
+
   // 点击头像换头像：选图 → 上传 → updateUser 落库（avatar 写后端返回的相对 path）→ setUserInfo + 刷新显示。
   // 注意：updateUser 回传的 avatar 必须是相对 path（后端返回值），不能是 resolveAsset 后的 http 绝对地址，否则会把 http URL 写库。
   async onTapAvatar() {
     if (this.data.avatarUploading) return
+    if (isGuest()) {
+      this.goLoginRegister()
+      return
+    }
     const cached = getUserInfo()
     if (!cached || cached.id == null) {
       wx.showToast({ title: '请先登录', icon: 'none' })
@@ -196,6 +245,10 @@ Page({
 
   // 打开个人资料编辑层：用当前缓存 info 预填表单
   openEdit() {
+    if (isGuest()) {
+      this.goLoginRegister()
+      return
+    }
     const cached = getUserInfo()
     if (!cached || cached.id == null) {
       wx.showToast({ title: '请先登录', icon: 'none' })
@@ -281,20 +334,84 @@ Page({
     }
   },
 
-  // 退出登录：清 token + 用户信息，reLaunch 到登录页
-  onLogout() {
+  // 打开「设置账号密码」弹层（仅占位账号 needSetup 时可用），清空表单
+  openSetup() {
+    if (!this.data.needSetup) return
+    this.setData({
+      setupVisible: true,
+      setupForm: { account: '', password: '', confirm: '' }
+    })
+  },
+
+  // 关闭弹层（取消 / 点蒙层）：保存中不允许关闭
+  closeSetup() {
+    if (this.data.setupSaving) return
+    this.setData({ setupVisible: false })
+  },
+
+  // 弹层输入绑定（account / password / confirm）
+  onSetupInput(e: WechatMiniprogram.Input) {
+    const field = e.currentTarget.dataset.field as keyof SetupForm
+    this.setData({ [`setupForm.${field}`]: e.detail.value })
+  },
+
+  // 提交设置：校验账号 + 密码强度 + 两次一致 → setupCredentials → 同步本地 account、隐藏入口。
+  // 成功后弹「请牢记」强提示；密码不入本地缓存。一次性操作，成功即不再显示入口。
+  async saveSetup() {
+    if (this.data.setupSaving) return
+    const cached = getUserInfo()
+    if (!cached || cached.id == null) {
+      wx.showToast({ title: '请先登录', icon: 'none' })
+      return
+    }
+    const form = this.data.setupForm
+    const account = (form.account || '').trim()
+    const password = form.password || ''
+    const confirm = form.confirm || ''
+
+    if (!account) {
+      wx.showToast({ title: '请输入账号', icon: 'none' })
+      return
+    }
+    // wx_ 是自动注册账号的保留前缀，禁止用户设成这个（否则占位判断失准）
+    if (account.indexOf('wx_') === 0) {
+      wx.showToast({ title: '账号不能以 wx_ 开头', icon: 'none' })
+      return
+    }
+    const pwdErr = validatePassword(password)
+    if (pwdErr) {
+      wx.showToast({ title: pwdErr, icon: 'none' })
+      return
+    }
+    if (password !== confirm) {
+      wx.showToast({ title: '两次输入的密码不一致', icon: 'none' })
+      return
+    }
+
+    this.setData({ setupSaving: true })
+    wx.showLoading({ title: '设置中', mask: true })
+    try {
+      await setupCredentials(account, password)
+    } catch (e) {
+      // setupCredentials 走 request.ts，失败已统一 toast，这里静默
+      wx.hideLoading()
+      this.setData({ setupSaving: false })
+      return
+    }
+    wx.hideLoading()
+    // 落库成功：本地缓存账号同步为新账号（不缓存密码），入口随之消失
+    const next: UserInfo = { ...cached, account }
+    setUserInfo(next)
+    this.setData({
+      setupVisible: false,
+      setupSaving: false,
+      needSetup: false
+    })
     wx.showModal({
-      title: '退出登录',
-      content: '确定要退出当前账号吗？',
-      confirmText: '退出',
-      confirmColor: '#e64340',
-      success: (res) => {
-        if (res.confirm) {
-          clearToken()
-          clearUserInfo()
-          wx.reLaunch({ url: '/pages/login/login' })
-        }
-      }
+      title: '设置成功',
+      content: '请牢记你的账号和密码，仅可设置一次，之后将无法在小程序内修改。',
+      showCancel: false,
+      confirmText: '我已记住'
     })
   }
 })

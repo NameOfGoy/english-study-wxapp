@@ -12,6 +12,8 @@
   border-top: 2rpx solid #EEF1F5;
   box-shadow: 0 -6rpx 20rpx rgba(20, 30, 50, 0.04);
 }
+/* 页面弹层打开时隐藏，避免遮住弹层底部按钮 */
+.tab-bar--hidden { display: none; }
 
 .tab-item {
   flex: 1;

@@ -35,6 +35,32 @@
     </view>
   </view>
 
+  <!-- 游客：登录/注册入口（游客只读浏览，引导登录后可写） -->
+  <block wx:if="{{isGuest}}">
+    <view class="section-title">👋 欢迎</view>
+    <view class="card setup-banner" bindtap="goLoginRegister">
+      <view class="setup-banner__icon">👋</view>
+      <view class="col flex-1">
+        <text class="setup-banner__title">登录 / 注册</text>
+        <text class="setup-banner__desc text-3">当前为游客浏览，登录后可添加单词、练习并同步你的学习数据</text>
+      </view>
+      <text class="list-item__arrow">›</text>
+    </view>
+  </block>
+
+  <!-- 一次性「设置账号密码」入口：仅微信占位账号(account 以 wx_ 开头) 显示，设置成功后消失 -->
+  <block wx:if="{{needSetup}}">
+    <view class="section-title">🔐 账号安全</view>
+    <view class="card setup-banner" bindtap="openSetup">
+      <view class="setup-banner__icon">🔐</view>
+      <view class="col flex-1">
+        <text class="setup-banner__title">设置账号和密码</text>
+        <text class="setup-banner__desc text-3">当前账号由微信自动创建，建议设置专属账号密码（仅可设置一次，请牢记）</text>
+      </view>
+      <text class="list-item__arrow">›</text>
+    </view>
+  </block>
+
   <!-- 设置项分组 -->
   <view class="section-title">⚙️ 设置</view>
   <view class="card">
@@ -47,15 +73,6 @@
     >
       <view class="list-item__icon">{{item.emoji}}</view>
       <text class="flex-1">{{item.text}}</text>
-      <text class="list-item__arrow">›</text>
-    </view>
-  </view>
-
-  <!-- 退出登录 -->
-  <view class="card">
-    <view class="list-item profile-logout" bindtap="onLogout">
-      <view class="list-item__icon">🚪</view>
-      <text class="flex-1">退出登录</text>
       <text class="list-item__arrow">›</text>
     </view>
   </view>
@@ -120,6 +137,69 @@
             value="{{editForm.email}}"
             data-field="email"
             bindinput="onEditInput"
+          />
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 「设置账号密码」弹层：一次性设置自定义账号 + 新密码（占位账号专用） -->
+  <view
+    wx:if="{{setupVisible}}"
+    class="edit-mask"
+    bindtap="closeSetup"
+    catchtouchmove="noop"
+  >
+    <view class="edit-sheet" catchtap="noop">
+      <view class="edit-sheet__header">
+        <text class="edit-sheet__cancel" bindtap="closeSetup">取消</text>
+        <text class="edit-sheet__title">设置账号密码</text>
+        <text class="edit-sheet__save {{setupSaving ? 'is-disabled' : ''}}" bindtap="saveSetup">保存</text>
+      </view>
+
+      <view class="edit-sheet__body">
+        <view class="setup-tip text-3">账号密码仅可设置一次，请牢记；设置后可在其他设备用账号密码登录。</view>
+        <!-- 账号 -->
+        <view class="edit-field">
+          <text class="edit-field__label">账号</text>
+          <input
+            class="edit-field__input"
+            placeholder="请输入账号"
+            placeholder-class="edit-field__ph"
+            value="{{setupForm.account}}"
+            data-field="account"
+            maxlength="100"
+            bindinput="onSetupInput"
+          />
+        </view>
+        <!-- 新密码 -->
+        <view class="edit-field">
+          <text class="edit-field__label">新密码</text>
+          <input
+            class="edit-field__input"
+            type="password"
+            password="{{true}}"
+            placeholder="8~64位，含大小写/数字/符号任意3类"
+            placeholder-class="edit-field__ph"
+            value="{{setupForm.password}}"
+            data-field="password"
+            maxlength="64"
+            bindinput="onSetupInput"
+          />
+        </view>
+        <!-- 确认密码 -->
+        <view class="edit-field edit-field--last">
+          <text class="edit-field__label">确认密码</text>
+          <input
+            class="edit-field__input"
+            type="password"
+            password="{{true}}"
+            placeholder="再次输入新密码"
+            placeholder-class="edit-field__ph"
+            value="{{setupForm.confirm}}"
+            data-field="confirm"
+            maxlength="64"
+            bindinput="onSetupInput"
           />
         </view>
       </view>

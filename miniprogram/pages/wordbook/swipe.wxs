@@ -1,0 +1,98 @@
+// swipe.wxs —— 词条行左滑手势，在【渲染层】执行。
+// 关键：touchmove 期间直接 setStyle 改 transform，全程不调 setData、不过逻辑↔渲染那座异步桥，
+// 因此逐帧跟手丝滑（微信聊天侧滑行同款原理）。仅在松手定开/关那一刻 callMethod 回逻辑层同步一次。
+// WXS 是 ES5 子集：只能 var/function，无箭头函数、无 ?./??、无模板字符串、无 let/const。
+
+var DIR_LOCK = 8 // px：方向判定阈值，横移/纵移谁先过它就锁定主方向
+
+// dataset 取出的宽度统一转数字（px）
+function numW(v) {
+  return v ? (v - 0) : 0
+}
+
+// touchstart：记起点、读按钮区宽度、去过渡（跟手不拖影）。多选态不参与左滑。
+function start(e, owner) {
+  var inst = e.instance
+  var st = inst.getState()
+  if (e.currentTarget.dataset.sel) {
+    st.dragging = false
+    return
+  }
+  st.x0 = e.touches[0].clientX
+  st.y0 = e.touches[0].clientY
+  st.base = st.offset ? st.offset : 0
+  st.w = numW(e.currentTarget.dataset.w)
+  st.dragging = true
+  st.locked = false
+  st.horizontal = false
+  // 注意：不在 touchstart 去过渡。否则"点一下打开的行"会先把 transition 设成 none，
+  // 紧接着的程序化收起就补不了间、瞬间跳。只有真正进入横向拖动(move 里)才去过渡。
+}
+
+// touchmove：锁定主方向；横向则直接按 dx 设 transform（clamp [-w,0]），纵向让位列表滚动。
+function move(e, owner) {
+  var inst = e.instance
+  var st = inst.getState()
+  if (!st.dragging) return
+  var dx = e.touches[0].clientX - st.x0
+  var dy = e.touches[0].clientY - st.y0
+  if (!st.locked) {
+    if (Math.abs(dx) < DIR_LOCK && Math.abs(dy) < DIR_LOCK) return
+    st.locked = true
+    // 平局(dx==dy)偏向纵向滚动，避免误吞列表滚动
+    st.horizontal = Math.abs(dx) > Math.abs(dy)
+    if (st.horizontal) {
+      // 真正进入横向拖动才去过渡，让位移跟手；纯点击不会走到这里，过渡得以保留 → 收回能补间
+      inst.setStyle({ transition: 'none' })
+    }
+  }
+  if (!st.horizontal) return
+  var next = st.base + dx
+  if (next > 0) next = 0
+  if (next < -st.w) next = -st.w
+  st.offset = next
+  inst.setStyle({ transform: 'translateX(' + next + 'px)' })
+}
+
+// touchend/cancel：过半吸附打开，否则收回；恢复过渡做 snap 动画；回调逻辑层同步 open。
+function end(e, owner) {
+  var inst = e.instance
+  var st = inst.getState()
+  if (!st.dragging) return
+  st.dragging = false
+  inst.setStyle({ transition: 'transform 0.2s ease' })
+  if (!st.horizontal) return
+  var open = st.offset < (-st.w / 2)
+  var fin = open ? -st.w : 0
+  st.offset = fin
+  inst.setStyle({ transform: 'translateX(' + fin + 'px)' })
+  var ds = e.currentTarget.dataset
+  owner.callMethod('onSwipeSettle', { id: ds.id, g: ds.g, r: ds.r, open: open })
+}
+
+// swopen（逻辑层数据）变化时同步行 transform：程序化收起（切视图/进多选/点空白/点状态标签删除）走这里。
+// 关键：先单独 setStyle 把过渡设回来（横向拖动期间 move 会设成 none，end 虽已设回，这里再兜底确保），
+// 再单独 setStyle 改 transform——两次分开调用，-w→0 这类程序化收起才补间滑动；合并成一次会瞬间跳（与 end() 同款）。
+function observe(newVal, oldVal, owner, inst) {
+  var st = inst.getState()
+  inst.setStyle({ transition: 'transform 0.2s ease' })
+  if (newVal) {
+    var w = st.w
+    if (!w) {
+      var ds = inst.getDataset()
+      w = numW(ds.w)
+    }
+    st.offset = -w
+    inst.setStyle({ transform: 'translateX(' + (-w) + 'px)' })
+  } else {
+    st.offset = 0
+    inst.setStyle({ transform: 'translateX(0px)' })
+  }
+}
+
+module.exports = {
+  start: start,
+  move: move,
+  end: end,
+  observe: observe
+}

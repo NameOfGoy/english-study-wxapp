@@ -56,3 +56,14 @@ export function getRole(): number {
 export function isAdmin(): boolean {
   return getRole() === 1
 }
+
+/** 游客角色码（与后端 utils.RoleGuest 一致）：微信登录未注册时拿到的只读身份。 */
+export const ROLE_GUEST = 2
+
+/**
+ * 当前是否游客（只读身份）。游客可浏览，但写操作会被后端守卫拦下、前端引导登录。
+ * 据此在「我的」等页显示「登录/注册」入口。
+ */
+export function isGuest(): boolean {
+  return getRole() === ROLE_GUEST
+}

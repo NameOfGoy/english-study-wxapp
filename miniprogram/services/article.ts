@@ -12,6 +12,7 @@ import request from '../utils/request'
 import type {
   DataReply,
   PageReply,
+  BaseReply,
   ArticleView,
   ArticleCandidate,
   ArticleListItem,
@@ -133,4 +134,27 @@ export function getArticleDetail(id: number): Promise<ArticleView> {
     url: withQuery('/api/v1/practise/article/detail', buildQuery({ id })),
     method: 'GET'
   }).then((res) => res.data)
+}
+
+/** 删除收录文章（连同 article_words）。需要 token。POST delete，body {id}。成功 resolve(void)。 */
+export function deleteArticle(id: number): Promise<void> {
+  return request<BaseReply>({
+    url: '/api/v1/practise/article/delete',
+    method: 'POST',
+    data: { id }
+  }).then(() => undefined)
+}
+
+/** batch-delete 响应：deleted（实际删除篇数）在顶层 */
+interface BatchDeleteReply extends BaseReply {
+  deleted: number
+}
+
+/** 批量删除收录文章。需要 token。POST batch-delete，body {ids}。返回实际删除篇数。 */
+export function batchDeleteArticle(ids: number[]): Promise<number> {
+  return request<BatchDeleteReply>({
+    url: '/api/v1/practise/article/batch-delete',
+    method: 'POST',
+    data: { ids }
+  }).then((res) => res.deleted)
 }

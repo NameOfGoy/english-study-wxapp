@@ -3,6 +3,10 @@
 .al {
   padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
 }
+/* 多选态：底部固定操作条占位，避免最后一行被遮住 */
+.al--selectmode {
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
+}
 
 /* 搜索 + 筛选 */
 .al-filters {
@@ -78,17 +82,90 @@
   font-weight: 600;
 }
 
+/* 列表操作栏（多选 / 取消入口） */
+.al-listbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16rpx;
+  padding: 20rpx 32rpx 0;
+}
+.al-listbar__hint {
+  flex: 1;
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+.al-listbar__btn {
+  padding: 8rpx 28rpx;
+  border-radius: var(--r-pill);
+  background: rgba(61, 165, 244, 0.1);
+  color: var(--primary);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+.al-listbar__btn:active {
+  background: rgba(61, 165, 244, 0.2);
+}
+
 /* 列表 */
 .al-list {
   padding: 24rpx 32rpx;
 }
+
+/* 行外壳：相对定位，承载左滑的删除按钮 + 可滑动内容层。
+   底色给白(卡片色)：内容层因 transform 自成合成层，静止态边缘可能漏 1 子像素缝，
+   露白(与内容同色)而非删除按钮的红，杜绝"静止态右下角红线"。 */
 .al-row {
+  position: relative;
+  margin-bottom: 20rpx;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: var(--card);
+}
+
+/* 左滑露出的删除按钮：贴右侧，固定宽度（与 ts 的 DELETE_WIDTH 一致）。
+   每行是独立圆角卡片(半径 --r-card=24rpx)：
+   - 上下各内缩 24rpx(=圆角半径)：避开右上/右下圆角区，圆角处只露白底外壳、不露红；
+   - 右边内缩 2rpx：红块右缘正好压在内容层右缘背后，合成层有 1 子像素缝会露红，内缩后缝里只露白底；
+   - 左侧加圆角：露出时像个删除按钮。 */
+.al-row__action {
+  position: absolute;
+  top: 24rpx;
+  right: 2rpx;
+  bottom: 24rpx;
+  border-radius: var(--r-inner) 0 0 var(--r-inner);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+/* 内容层：盖在删除按钮之上，transform 实现左滑位移 */
+.al-row__content {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
   background: var(--card);
   border-radius: var(--r-card);
   padding: 28rpx;
-  margin-bottom: 20rpx;
   box-shadow: var(--shadow);
+  box-sizing: border-box;
+  transition: transform 0.2s ease;
 }
+/* 滑动期间临时去掉过渡，跟手不拖影 */
+.al-row__content--swiping {
+  transition: none;
+}
+
+.al-row__main {
+  flex: 1;
+  min-width: 0;
+}
+
 .al-row__title {
   font-size: 32rpx;
   font-weight: 700;
@@ -121,6 +198,31 @@
   word-break: break-word;
 }
 
+/* 多选态前置勾选框 */
+.al-check {
+  flex: none;
+  width: 44rpx;
+  height: 44rpx;
+  margin-top: 4rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--line);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.al-check--on {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+.al-check__tick {
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
 /* 底部状态 */
 .al-foot {
   text-align: center;
@@ -140,5 +242,54 @@
 .al-empty__text {
   margin-top: 16rpx;
   font-size: 26rpx;
+  color: var(--text-3);
+}
+
+/* 底部固定操作条（多选态） */
+.al-actionbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 16rpx 32rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: 2rpx solid var(--line);
+  box-shadow: 0 -8rpx 24rpx rgba(20, 30, 50, 0.06);
+}
+.al-actionbar__all {
+  padding: 12rpx 28rpx;
+  border-radius: var(--r-pill);
+  border: 2rpx solid var(--line);
+  color: var(--text);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+.al-actionbar__all:active {
+  background: #f2f4f7;
+}
+.al-actionbar__count {
+  flex: 1;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--text-2);
+}
+.al-actionbar__del {
+  padding: 12rpx 40rpx;
+  border-radius: var(--r-pill);
+  background: var(--danger);
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.al-actionbar__del:active {
+  opacity: 0.88;
+}
+.al-actionbar__del--disabled {
+  background: #f2f4f7;
   color: var(--text-3);
 }
